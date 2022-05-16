@@ -1,7 +1,7 @@
 # Problema de Reducción 
 
 Se aplica la función promedio hasta alcanzar un valor aproximado de convergencia. <br>
-Se resolvera en una y dos dimensiones.
+Se resolvera en una y dos dimensiones utilizando el modelo de Memoria Compartida (OpenMP) y el modelo de Memoria Distribuida (MPI).
 
 ---
 
@@ -41,6 +41,7 @@ compara con el resto de los elementos del vector. Si la diferencia en valor abso
 
 Para el caso de dos dimensiones se toma el primer elemento V[0,0].
 
-Si los valores convergen el algoritmo finaliza si los valores no convergen debe aplicarse la reducción nuevamente. Esto puede implicar varias ejecuciones de la reducción hasta que los
+Si los valores convergen el algoritmo finaliza. **Si los valores no convergen debe aplicarse la reducción nuevamente.** Esto puede implicar varias ejecuciones de la reducción hasta que los
 valores convergen.
+
 
