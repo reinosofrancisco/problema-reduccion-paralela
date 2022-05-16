@@ -1,47 +1,46 @@
-## Mail del profe
+# Problema de Reducción 
 
-Buenos días a ambos,
+Se aplica la función promedio hasta alcanzar un valor aproximado de convergencia. <br>
+Se resolvera en una y dos dimensiones.
 
-Les confirmo el grupo. Son el grupo 5 y queda conformado por: 
+---
 
-02003/7    Alfonsin, Jeronimo
-01981/8    Reinoso, Francisco
+## Caso 1: Una dimension
 
-Deben resolver la paralelización de memoria compartida con OpenMP y la de memoria distribuida con MPI. 
-
-A continuación les paso las pautas y las credenciales para acceder a cluster.
-
-Pautas para el uso del cluster:
-
-1) Antes de enviar a ejecutar en el cluster asegúrense que el algoritmo funciona correctamente y no presenta bloqueos productos de mala sincronización (Programación Concurrente).
-
-2) Limítense sólo a ejecutar las aplicaciones. No modificar archivos que no sean sus propios códigos.
-
-3) No monopolizar el cluster generando scripts que envien a correr aplicaciones masivamente. El cluster es compartido por todos los usuarios y deben ser respetuosos con el resto.
-
-4) Cualquier problema de acceso o imposibilidad para correr un script consulten a la cátedra por este medio.
-
-5) Antes de abandonar el cluster asegúrense que en la cola no queden trabajos que hayan enviado y se encuentren "colgados". Si es así deberían cancelarlos. 
-
-6) Cualquier actividad "ilícita" será penalizada como mínimo con la pérdida de la cursada.
+Se parte de un arreglo V de N elementos de tipo float. <br>
+Para cada elemento en la posición i del vector V debe calcularse el 
+promedio entre el valor actual y sus vecinos próximos. <br>
 
 
-Datos de acceso:
+![picture 1](images/4171f11099a0318d0658b6994d2b12d4af5636007695c21a037fcb43a1d22726.png)  
 
-[VER EN IDEAS](https://ideas.info.unlp.edu.ar)
+Los casos especiales del primer y último elemento deben calcularse de la siguiente manera:
 
+![picture 2](images/3cc63fd8073f185706017fbdcc079d3ca4463f75e569821509d5994d9dfdcfe8.png)  
 
+---
 
----------
+## Caso 2: Dos dimensiones
 
-Alfonsin, Jeronimo escribio:
+Se parte de una matriz V de NxN elementos de tipo float.
+Para cada elemento en la posición (i,j) de la matriz V debe calcularse el promedio entre el valor actual y sus vecinos próximos, esto es:
 
- 
+![picture 5](images/65b145f83bb1739b3d6805e5c3d3ecbec6dc8e8be2d07726366c2f9a46bf6abb.png)  
 
-Hola Adrian buen día,
+Los casos especiales son las esquinas y los laterales de la matriz. En estos casos, se debe seguir la misma estrategia que en una dimensión: considerar sólo los vecinos próximos existentes y dividir por la cantidad de valores utilizados (esquinas dividir por 4 y laterales dividir por 6).
 
-Te escribo para informarte que, Francisco Reinoso (01981/8) y Jeronimo Alfonsin (02003/7), vamos a conformar un grupo para realizar el trabajo de promoción.
+---
 
-Saludos,
+## Pautas de Convergencia
 
-Jeronimo
+Una vez realizada una reducción, se debe verificar que todos los valores del vector convergen a un valor similar. <br>
+Para verificar la convergencia se toma el primer elemento y se
+compara con el resto de los elementos del vector. Si la diferencia en valor absoluto del valor del primer elemento con todos los elementos restantes es menor a un valor de precisión el algoritmo converge, en caso contrario el algoritmo no converge:
+
+![picture 4](images/1763e84ea453dbb23ca5aa4808c60e0f940dffc341345784546a6cbdd81c5afc.png)  
+
+Para el caso de dos dimensiones se toma el primer elemento V[0,0].
+
+Si los valores convergen el algoritmo finaliza si los valores no convergen debe aplicarse la reducción nuevamente. Esto puede implicar varias ejecuciones de la reducción hasta que los
+valores convergen.
+
