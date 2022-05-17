@@ -6,14 +6,15 @@
 #include <stdlib.h>
 #include <limits.h>
 
-
 #define PRESICION 0.01
 
-// Matriz Default Size
+// Default Vector Size
 int DIM = 512;
 float *A, *B;
 
-/** Inicializa el Vector A con valores Aleatorios del 1 al 100*/
+/** Inicializa el Vector A con valores Aleatorios del 1 al 100
+ * @param A Vector a inicializar
+ */
 void init_vector_ceros_y_unos(float *A)
 {
     for (int i = 0; i < DIM; i++)
@@ -22,7 +23,9 @@ void init_vector_ceros_y_unos(float *A)
     }
 }
 
-/** Imprime el Vector enviado */
+/** Imprime el Vector enviado 
+ * @param A Vector a imprimir
+ */
 void print_vector(float *vector)
 {
     for (int i = 0; i < DIM; i++)
@@ -61,6 +64,7 @@ int main(int argc, char *argv[])
 
     bool convergencia;
 
+    /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
 
     do
@@ -72,10 +76,9 @@ int main(int argc, char *argv[])
             B[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
         }
 
+        // Casos extremos
         B[0] = (A[0] + A[1]) / 2;
         B[DIM] = (A[DIM - 1] + A[DIM]) / 2;
-
-        // print_vector(B);
 
         /** Parte II - Verificacion de Convergencia. */
 
@@ -93,29 +96,7 @@ int main(int argc, char *argv[])
         {
             printf("El resultado no converge | Recalculando...\n");
 
-            // SI REASIGNO PUNTEROS NO ANDA BIEN. NO SE PORQUE
-            //Reasigno los punteros
-            // void *aux = B[0];
-            // float *peux = &A[0];
-            // *B = *A;
-            // *A = aux;
-
-            /** Al parecer habria que reasignar cada puntero.
-             * Es decir *A[0] -> *B[0]
-             * | *A[1] -> *B[1]
-             * | *A[DIM] -> *B[DIM]
-             * Por ahi es mas rapido cambiar todos los punteros
-             * antes que escribir en memoria todo el vector nuevamente. Nose.
-            */
-
-
-            printf(" %f",A[0]);
-            printf(" %f",A[DIM]);
-            printf(" %f",B[0]);
-            printf(" %f",B[DIM]);
-            printf(" | ");
-
-            // SI COPIO TODA EL VECTOR SI FUNCIONA (ergo, slower)
+            // Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
             for (int i = 0; i < DIM; i++)
             {
                 A[i] = B[i];
@@ -124,6 +105,7 @@ int main(int argc, char *argv[])
 
     } while (!convergencia);
 
+    /* Fin de la medicion de tiempo */
     printf("Tiempo en segundos para convergencia %f\n", dwalltime() - timetick);
 
     free(A);
