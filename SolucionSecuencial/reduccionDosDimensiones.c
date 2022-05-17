@@ -39,7 +39,7 @@ double dwalltime()
  */
 void print_txt_filas(float *A)
 {
-    FILE *fp = fopen("resultadoMult1.txt", "w");
+    FILE *fp = fopen("impresionMatriz.txt", "w");
     for (int i = 0; i < DIM; i++)
     {
         for (int j = 0; j < DIM; j++)
@@ -88,6 +88,8 @@ int main(int argc, char *argv[])
                     A[i-1,j],   A[i-1,j-1],     A[i-1,j+1],
                     A[i+1,j],   A[i+1,j-1],     A[i+1,j+1]
                     Calculo del promedio con los 4-6-8 vecinos + el valor A[pos,pos] */
+
+                    /* Exceptuar los casos de i = 0, i = DIM, j = 0 y j = DIM ya que son extremos*/
                 }
             }
         }
