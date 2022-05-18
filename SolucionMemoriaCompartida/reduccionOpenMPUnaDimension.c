@@ -124,4 +124,5 @@ int main(int argc, char *argv[])
 
     free(A);
     free(B);
+    return 0;
 }
