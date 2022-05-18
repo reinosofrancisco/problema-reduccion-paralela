@@ -9,7 +9,7 @@
 #define PRESICION 0.01
 
 // Default Matrix Size
-int DIM = 32;
+int DIM = 150;
 float *A, *B;
 
 /** Inicializa la Matriz con valores Aleatorios del 1 al 100
@@ -58,9 +58,11 @@ void print_txt_filas(float *A)
 int main(int argc, char *argv[])
 {
 
-    // Variable auxiliar para calculo del tiempo
+    // Variable auxiliares
     double timetick;
     int i, j;
+    bool convergencia;
+    register float aux; // Register for multiple accesses to the same variable
 
     /* Alocacion de memoria para Matriz N*N cuadrada */
     A = (float *)malloc(sizeof(float) * DIM * DIM);
@@ -68,28 +70,15 @@ int main(int argc, char *argv[])
 
     init_matrix_ceros_y_unos_filas(A);
 
-    // Si pones esto, no converge nunca. Falta alguna posicion de memoria.
-    // init_matrix_ceros_y_unos_filas(B);
-
-    bool convergencia;
-
-    // Uso Register ya que voy a acceder constantemente a aux
-    register float aux;
-
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
-
-    print_txt_filas(A);
 
     do
     {
 
         /** Parte I - Calculo de Vector Reducido*/
 
-        /* Primero calculo para los casos comunes,
-            desde i = 1 hasta i = DIM - 1,
-            y desde j = 1 hasta j = DIM - 1.
-            */
+        /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
         for (i = 1; i < DIM - 1; i++)
         {
             for (j = 1; j < DIM - 1; j++)
@@ -100,20 +89,20 @@ int main(int argc, char *argv[])
                 aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
                 B[i * DIM + j] = (aux / 9);
 
-                // B[i * DIM + j] = (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]
-                //                 + A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]
-                //                 + A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]) / 9;
                 /*
                 A[i-1,j],   A[i-1,j-1],     A[i-1,j+1],
                 A[i,j],     A[i,j-1],       A[i,j+1],
                 A[i+1,j],   A[i+1,j-1],     A[i+1,j+1]
                 Calculo del promedio con los 4-6-8 vecinos + el valor A[pos,pos] */
 
-                /* Exceptuar los casos de i = 0, i = DIM, j = 0 y j = DIM ya que son extremos*/
+                /* Exceptuar los casos de i = 0, i = DIM - 1, j = 0 y j = DIM - 1 ya que son extremos*/
             }
         }
 
-        /** CALCULO PARA LA PRIMER Y ULTIMA FILA, Y LA PRIMER Y ULTIMA COLUMNA. SIN TOMAR LAS PUNTAS*/
+        /** CALCULO PARA LA PRIMER Y ULTIMA FILA,
+         * Y LA PRIMER Y ULTIMA COLUMNA.
+         * SIN TOMAR LAS PUNTAS
+         */
 
         /* Calculo para i = 0 sin tomar las puntas. Esto toma la primer fila */
         i = 0;
@@ -125,8 +114,8 @@ int main(int argc, char *argv[])
             B[i * DIM + j] = (aux / 6);
         }
 
-        /* Calculo para i = DIM sin tomar las puntas. Esto toma la ultima fila */
-        i = DIM;
+        /* Calculo para i = DIM - 1 sin tomar las puntas. Esto toma la ultima fila */
+        i = DIM - 1;
         for (j = 1; j < DIM - 1; j++)
         {
             aux = 0;
@@ -145,8 +134,8 @@ int main(int argc, char *argv[])
             B[i * DIM + j] = (aux / 6);
         }
 
-        /* Calculo para j = DIM sin tomar las puntas. Esto toma la ultima columna */
-        j = DIM;
+        /* Calculo para j = DIM - 1 sin tomar las puntas. Esto toma la ultima columna */
+        j = DIM - 1;
         for (i = 1; i < DIM - 1; i++)
         {
             aux = 0;
@@ -162,19 +151,19 @@ int main(int argc, char *argv[])
         j = 0;
         B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) / 4;
 
-        /* Calculo para i = 0 y j = DIM. Esto toma la ultima casilla [0,DIM]*/
+        /* Calculo para i = 0 y j = DIM - 1. Esto toma la ultima casilla [0,DIM - 1]*/
         i = 0;
-        j = DIM;
+        j = DIM - 1;
         B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) / 4;
 
-        /* Calculo para i = DIM y j = 0. Esto toma la primer casilla [DIM,0]*/
-        i = DIM;
+        /* Calculo para i = DIM - 1 y j = 0. Esto toma la primer casilla [DIM - 1,0]*/
+        i = DIM - 1;
         j = 0;
         B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) / 4;
 
-        /* Calculo para i = DIM y j = DIM. Esto toma la ultima casilla [DIM,DIM]*/
-        i = DIM;
-        j = DIM;
+        /* Calculo para i = DIM - 1 y j = DIM - 1. Esto toma la ultima casilla [DIM - 1,DIM - 1]*/
+        i = DIM - 1;
+        j = DIM - 1;
         B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) / 4;
 
         /** Parte II - Verificacion de Convergencia. */
