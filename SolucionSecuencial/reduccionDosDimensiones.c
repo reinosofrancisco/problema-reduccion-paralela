@@ -9,7 +9,7 @@
 #define PRESICION 0.01
 
 // Default Matrix Size
-int DIM = 150;
+int DIM = 8;
 float *A, *B;
 
 /** Inicializa la Matriz con valores Aleatorios del 1 al 100
@@ -180,6 +180,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        print_txt_filas(A);
 
         if (!convergencia)
         {
