@@ -20,7 +20,7 @@ void init_vector_ceros_y_unos(float *A)
 {
     for (int i = 0; i < DIM; i++)
     {
-        A[i] = (rand() % 2);
+        A[i] = rand() / (float) RAND_MAX;
     }
 }
 
@@ -67,11 +67,13 @@ int main(int argc, char *argv[])
 
     init_vector_ceros_y_unos(A);
 
+
     /*
     printf("Vector A: \n");
     print_vector(A);
     printf("\n");
     */
+    
     bool convergencia;
     omp_set_num_threads(numThreads);
 
@@ -85,10 +87,10 @@ int main(int argc, char *argv[])
         #pragma omp parallel for private(i) shared(A,B)
         for (int i = 0; i < DIM; i++)
         {
-            if (i = 0) {
+            if (i == 0) {
                 B[i] = (A[i] + A[i+1]) / 2;
-            } else if (i = DIM - 1) {
-                B[ DIM - 1] = (A[DIM - 1] + A[DIM - 2]) / 2;
+            } else if (i == DIM - 1) {
+                B[i] = (A[i-1] + A[i]) / 2;
             } else {
                 B[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
             }
@@ -102,13 +104,12 @@ int main(int argc, char *argv[])
         #pragma omp parallel for reduction(&&:convergencia)
         for (i = 0; i < DIM; i++)
         {
-            convergencia = convergencia && !(fabs(B[0] - B[i]) > PRESICION); 
+            convergencia = convergencia && !(fabs(B[0] - B[i]) > PRESICION);
         }
 
         if (!convergencia)
         {
             //printf("El resultado no converge | Recalculando...\n");
-            cantIteraciones ++;
             // Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
             for (int i = 0; i < DIM; i++)
             {
@@ -120,7 +121,6 @@ int main(int argc, char *argv[])
 
     /* Fin de la medicion de tiempo */
     printf("Tiempo en segundos para convergencia %f\n", dwalltime() - timetick);
-    printf("Cantidad de reducciones aplicadas: %d\n", cantIteraciones);
 
     free(A);
     free(B);

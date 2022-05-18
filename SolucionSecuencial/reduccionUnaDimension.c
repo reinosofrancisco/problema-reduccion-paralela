@@ -19,7 +19,7 @@ void init_vector_ceros_y_unos(float *A)
 {
     for (int i = 0; i < DIM; i++)
     {
-        A[i] = (rand() % 2);
+        A[i] = rand() / (float) RAND_MAX;
     }
 }
 
@@ -52,15 +52,15 @@ int main(int argc, char *argv[])
     // Variable auxiliar para calculo del tiempo
     double timetick;
 
+    if (argc > 1) {
+        DIM = atoi(argv[1]);
+    }
+
     // Aloca memoria para el vector principal y el Vector Resultado
     A = (float *)malloc(sizeof(float) * DIM);
     B = (float *)malloc(sizeof(float) * DIM);
 
     init_vector_ceros_y_unos(A);
-
-    printf("Vector A: \n");
-    print_vector(A);
-    printf("\n");
 
     bool convergencia;
 
@@ -73,12 +73,14 @@ int main(int argc, char *argv[])
 
         for (int i = 1; i < DIM - 1; i++)
         {
-            B[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
+            if (i == 0) {
+                B[i] = (A[i] + A[i+1]) / 2;
+            } else if (i == DIM - 1) {
+                B[ DIM - 1] = (A[DIM - 1] + A[DIM - 2]) / 2;
+            } else {
+                B[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
+            }
         }
-
-        // Casos extremos
-        B[0] = (A[0] + A[1]) / 2;
-        B[DIM] = (A[DIM - 1] + A[DIM]) / 2;
 
         /** Parte II - Verificacion de Convergencia. */
 
@@ -94,7 +96,7 @@ int main(int argc, char *argv[])
 
         if (!convergencia)
         {
-            printf("El resultado no converge | Recalculando...\n");
+          //  printf("El resultado no converge | Recalculando...\n");
 
             // Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
             for (int i = 0; i < DIM; i++)
