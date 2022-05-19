@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
         // Casos extremos
         B[0] = (A[0] + A[1]) / 2;
-        B[DIM] = (A[DIM - 1] + A[DIM]) / 2;
+        B[DIM - 1] = (A[DIM - 1] + A[DIM]) / 2;
 
         /** Parte II - Verificacion de Convergencia. */
 
