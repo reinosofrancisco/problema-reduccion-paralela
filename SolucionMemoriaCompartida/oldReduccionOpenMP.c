@@ -10,7 +10,7 @@
 #define PRESICION 0.01
 
 // Default Matrix Size
-int DIM = 300;
+int DIM = 512;
 float *A, *B;
 
 /** Inicializa la Matriz con valores Aleatorios del 1 al 100
@@ -23,7 +23,7 @@ void init_matrix_ceros_y_unos_filas(float *A)
     {
         for (int j = 0; j < DIM; j++)
         {
-            A[i * DIM + j] = (rand() % 2);
+            A[i * DIM + j] = (rand() / (float)(RAND_MAX));
         }
     }
 }
@@ -84,12 +84,6 @@ int main(int argc, char *argv[])
         /** Parte I - Calculo de Vector Reducido*/
 
         /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
-
-        /**
-         * Va Shared(A,B) ??
-         * Por defecto, todas las variables se comparten excepto las declaradas en las regiones paralelas.
-         * Por ende, no. No va.
-         */
         #pragma omp parallel for private(i, j,aux) 
         for (i = 1; i < DIM - 1; i++)
         {
@@ -99,7 +93,7 @@ int main(int argc, char *argv[])
                 aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
                 aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
                 aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                B[i * DIM + j] = (aux / 9);
+                B[i * DIM + j] = (aux * 0.111111);
             }
         }//Barrera implicita de OpenMP
 
@@ -108,6 +102,8 @@ int main(int argc, char *argv[])
          * SIN TOMAR LAS PUNTAS
          */
 
+        
+
         /* Calculo para i = 0 sin tomar las puntas. Esto toma la primer fila */
         i = 0;
         for (j = 1; j < DIM - 1; j++)
@@ -115,7 +111,7 @@ int main(int argc, char *argv[])
             aux = 0;
             aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
             aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-            B[i * DIM + j] = (aux / 6);
+            B[i * DIM + j] = (aux * 0.166666);
         }
 
         /* Calculo para i = DIM - 1 sin tomar las puntas. Esto toma la ultima fila */
@@ -125,7 +121,7 @@ int main(int argc, char *argv[])
             aux = 0;
             aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
             aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-            B[i * DIM + j] = (aux / 6);
+            B[i * DIM + j] = (aux * 0.166666);
         }
 
         /* Calculo para j = 0 sin tomar las puntas. Esto toma la primer columna */
@@ -135,7 +131,7 @@ int main(int argc, char *argv[])
             aux = 0;
             aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
             aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
-            B[i * DIM + j] = (aux / 6);
+            B[i * DIM + j] = (aux * 0.166666);
         }
 
         /* Calculo para j = DIM - 1 sin tomar las puntas. Esto toma la ultima columna */
@@ -145,7 +141,7 @@ int main(int argc, char *argv[])
             aux = 0;
             aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
             aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
-            B[i * DIM + j] = (aux / 6);
+            B[i * DIM + j] = (aux * 0.166666);
         }
 
         /** CALCULO PARA LAS PUNTAS */
@@ -153,22 +149,22 @@ int main(int argc, char *argv[])
         /* Calculo para i = 0 y j = 0. Esto toma la primer casilla [0,0] */
         i = 0;
         j = 0;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) / 4;
+        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) * (0.25);
 
         /* Calculo para i = 0 y j = DIM - 1. Esto toma la ultima casilla [0,DIM - 1]*/
         i = 0;
         j = DIM - 1;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) / 4;
+        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
 
         /* Calculo para i = DIM - 1 y j = 0. Esto toma la primer casilla [DIM - 1,0]*/
         i = DIM - 1;
         j = 0;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) / 4;
+        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) * (0.25);
 
         /* Calculo para i = DIM - 1 y j = DIM - 1. Esto toma la ultima casilla [DIM - 1,DIM - 1]*/
         i = DIM - 1;
         j = DIM - 1;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) / 4;
+        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
 
         /** Parte II - Verificacion de Convergencia. */
 
@@ -177,25 +173,17 @@ int main(int argc, char *argv[])
         /* No puedo paralelizar la verificacion a menos que tenga un vector[DIM]
         de booleanos, y guarde dada true/false, para luego recorrerlo y verificar
         si alguno de los threads devolvio false.*/
+        #pragma omp parallel for reduction(&&:convergencia)
         for (i = 0; i < DIM; i++)
         {
             for (j = 0; j < DIM; j++)
             {
-                if (fabs(B[0] - B[i * DIM + j]) > PRESICION)
-                {
-                    convergencia = false;
-                    //goto salida;    //Salgo de ambos for loops para ahorrar tiempo. UPDATE al seq si lo vas a usar
-                }
+                convergencia = convergencia && !(fabs(B[0] - B[i]) > PRESICION);
             }
         }
-        salida: {sleep(0);/*Literally does nothing!*/};    //UPDATE al seq si lo vas a usar
-
-        // print_txt_filas(A);
 
         if (!convergencia)
         {
-            printf("El resultado no converge | Recalculando...\n");
-
             // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
             #pragma omp parallel for private(i,j)
             for (i = 0; i < DIM; i++)
