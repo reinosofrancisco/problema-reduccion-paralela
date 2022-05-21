@@ -6,6 +6,14 @@ Es decir Promedio[0,0] = ( A[0,0] + A[0,1] ) / 2
 
 ahora es Promedio [0,0] = ( A[0,0] + A[0,1] ) * (0.5)
 
+---
+
+Modo de Compilacion
 ```
 gcc -o output input.c
+```
+
+Uso
+```
+./output DIM
 ```
