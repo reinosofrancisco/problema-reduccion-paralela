@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <math.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -10,19 +9,21 @@
 void funcionThreadMaster(int, int , int);
 void funcionThreads(int, int, int);
 
-
+int PRESICION = 0.01;
 
 int main(int argc, char *argv[]) {
     int id, nroProcesos, DIM;
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD,&miID);
-    MPI_Comm_size(MPI_COMM_WORLD,&nrProcesos);
+    MPI_Comm_rank(MPI_COMM_WORLD,&id);
+    MPI_Comm_size(MPI_COMM_WORLD,&nroProcesos);
+
+    printf("Hilo id: %d \n", id);
 
 
-    if (id = 0) {
+    if (id == 0) {
         funcionThreadMaster(nroProcesos, DIM, id);
     } else {
-        funcionThreads(id, N, nroProcesos);
+        funcionThreads(id, DIM, nroProcesos);
     }
 
     MPI_Finalize();
@@ -35,49 +36,38 @@ void funcionThreadMaster(int nroProcesos, int N, int id) {
 
     //Aloco espacio para el arreglo y lo completo
     float* A = (float *)malloc(sizeof(float) * N);
-    float* resultado = (float *)malloc(sizeof(float) * ((N/nroProcesos)))
+    float* resultado = (float *)malloc(sizeof(float) * ((N/nroProcesos)));
     
     for (int i = 0; i < N; i++)
     {
         A[i] = rand() / (float) RAND_MAX;
     }
 
-    bool convergencia; 
-    
-    // Reparto el arreglo entre los distintos procesos
-    for (int i = 1; i < N; i++) {
-        if (i != N-1) {
-            MPI_Send(&(A[(i*id)-1]), (N/nroProcesos) + 2 , MPI_FLOAT, i, 99, MPI_COMM_WORLD);
-        } else {
-            MPI_Send(&(A[(i*id)-1]), (N/nroProcesos) + 1 , MPI_FLOAT, i, 99, MPI_COMM_WORLD);
-        }
-       
-    }
-
-    /*
+    int convergencia = 1; 
 
     do { 
-        for (int i = 0; i < (N/nroProcesos) + 2; i++) {
+
+        // Reparto el arreglo entre los distintos procesos
+        for (int i = 1; i < nroProcesos; i++) {
+            if (i == nroProcesos - 1) {
+                MPI_Send(&(A[(i*(N/nroProcesos)) - 1]), (N/nroProcesos) + 1 , MPI_FLOAT, i, 99, MPI_COMM_WORLD);
+            } else {
+                MPI_Send(&(A[(i*(N/nroProcesos)) - 1]), (N/nroProcesos) + 2 , MPI_FLOAT, i, 99, MPI_COMM_WORLD);
+            }
+       
+        }
+
+        for (int i = 0; i < (N/nroProcesos); i++) {
             if (i == 0) {
                 resultado[i] = (A[i] + A[i+1]) * 0.5;
             } else {
                 resultado[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
             }
         }
-        MPI_Barrier(MPI_COMM_WORLD);
 
-        for (i = 1; i < N; i++) {
-            MPI_Send(resultado[0], 1, MPI_FLOAT, i, 98, MPI_COMM_WORLD);
-        } 
-            
+    } while (!convergencia);
 
-        convergencia = true;
-
-
-
-    } while (!convergencia)
-
-    */
+     printf("Hilo con id: %d termino!! \n", id);
 
     free(A);
     free(resultado);
@@ -85,13 +75,32 @@ void funcionThreadMaster(int nroProcesos, int N, int id) {
 
 void funcionThreads(int id, int N, int nroProcesos) {
 
-    int cantArray = id == 3 ? (N/nroProcesos) + 1 : (N/nroProcesos) + 2;
+    int cantArray = id == nroProcesos - 1 ? (N/nroProcesos) + 1 : (N/nroProcesos) + 2;
     float* array = (float *)malloc(sizeof(float) * cantArray);
-    float* resultado = (float *)malloc(sizeof(float) * ((N/nroProcesos)))
-
-    MPI_Recv(array, cantArray, MPI_FLOAT, 0, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    float* resultado = (float *)malloc(sizeof(float) * ((N/nroProcesos)));
 	
     printf("Slave id: %d\n", id);
+
+    int convergencia = 1;
+    
+    do {
+
+        MPI_Recv(array, cantArray, MPI_FLOAT, 0, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //Arranco en 1 porque como elemeto 0 le mando el ultimo valor del thread anterior
+        for (int i = 1; i < cantArray; i++) {
+             if (i == (N/nroProcesos) - 1 && id == nroProcesos - 1) {
+                resultado[i] = (array[i] + array[i - 1]) * 0.5;
+            } else {
+                resultado[i] = (array[i - 1] + array[i] + array[i + 1]) * 0.333333;
+            }
+        }
+
+       
+
+    } while (!convergenciaGeneral);
+
+    printf("Hilo con id: %d termino!! \n", id);
+
 
 
     free(array);

@@ -10,7 +10,7 @@
 #define PRESICION 0.01
 
 // Default Matrix Size
-int DIM = 300;
+int DIM = 1024;
 float *A, *B;
 
 /** Inicializa la Matriz con valores Aleatorios del 1 al 100
@@ -188,13 +188,13 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        salida: {sleep(0);/*Literally does nothing!*/};    //UPDATE al seq si lo vas a usar
+     //   salida: {sleep(0);/*Literally does nothing!*/};    //UPDATE al seq si lo vas a usar
 
         // print_txt_filas(A);
 
         if (!convergencia)
         {
-            printf("El resultado no converge | Recalculando...\n");
+     //       printf("El resultado no converge | Recalculando...\n");
 
             // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
             #pragma omp parallel for private(i,j)
