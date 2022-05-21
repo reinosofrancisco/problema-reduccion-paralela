@@ -1,0 +1,1 @@
+# Resolucion utilizando Memoria Distribuida - MPI

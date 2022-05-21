@@ -9,8 +9,12 @@
 #define PRESICION 0.01
 
 // Default Vector Size
-int DIM = 512;
+int DIM = 1024;
 float *A, *B;
+
+/***************************************************************************/
+/*                       Funciones Auxiliares                              */
+/***************************************************************************/
 
 /** Inicializa el Vector A con valores Aleatorios del 1 al 100
  * @param A Vector a inicializar
@@ -19,20 +23,8 @@ void init_vector_ceros_y_unos(float *A)
 {
     for (int i = 0; i < DIM; i++)
     {
-        A[i] = (rand() % 2);
+        A[i] = (rand() / (float)(RAND_MAX));
     }
-}
-
-/** Imprime el Vector enviado 
- * @param A Vector a imprimir
- */
-void print_vector(float *vector)
-{
-    for (int i = 0; i < DIM; i++)
-    {
-        printf("%f ", vector[i]);
-    }
-    printf("\n");
 }
 
 /** Funcion para comparar tiempos */
@@ -46,21 +38,29 @@ double dwalltime()
     return sec;
 }
 
+/***************************************************************************/
+/*                       Codigo Principal                                  */
+/***************************************************************************/
+
 int main(int argc, char *argv[])
 {
 
+    // Controla los argumentos al programa
+    if ((argc != 2) || ((DIM = atoi(argv[1])) <= 0))
+    {
+        printf("\nUsar: %s DIM\n  DIM: Dimension del Vector\n", argv[0]);
+        exit(1);
+    }
+
     // Variable auxiliar para calculo del tiempo
     double timetick;
+    int i;
 
     // Aloca memoria para el vector principal y el Vector Resultado
     A = (float *)malloc(sizeof(float) * DIM);
     B = (float *)malloc(sizeof(float) * DIM);
 
     init_vector_ceros_y_unos(A);
-
-    printf("Vector A: \n");
-    print_vector(A);
-    printf("\n");
 
     bool convergencia;
 
@@ -71,31 +71,33 @@ int main(int argc, char *argv[])
     {
         /** Parte I - Calculo de Vector Reducido */
 
-        for (int i = 1; i < DIM - 1; i++)
+        for (i = 0; i < DIM; i++)
         {
-            B[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
+            if (i == 0)
+            {
+                B[i] = ((A[i] + A[i + 1]) * (0.5));
+            }
+            else if (i == DIM - 1)
+            {
+                B[i] = ((A[i - 1] + A[i]) * (0.5));
+            }
+            else
+            {
+                B[i] = ((A[i - 1] + A[i] + A[i + 1]) * (0.333333));
+            }
         }
-
-        // Casos extremos
-        B[0] = (A[0] + A[1]) / 2;
-        B[DIM - 1] = (A[DIM - 2] + A[DIM - 1]) / 2;
 
         /** Parte II - Verificacion de Convergencia. */
 
         convergencia = true;
 
-        for (int i = 0; i < DIM; i++)
+        for (i = 0; i < DIM; i++)
         {
-            if (fabs(B[0] - B[i]) > PRESICION)
-            {
-                convergencia = false;
-            }
+            convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
         }
 
         if (!convergencia)
         {
-            printf("El resultado no converge | Recalculando...\n");
-
             // Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
             for (int i = 0; i < DIM; i++)
             {

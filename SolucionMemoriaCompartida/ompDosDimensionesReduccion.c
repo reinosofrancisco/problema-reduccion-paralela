@@ -13,6 +13,11 @@
 int DIM = 1024;
 float *A, *B;
 
+
+/***************************************************************************/
+/*                       Funciones Auxiliares                              */
+/***************************************************************************/
+
 /** Inicializa la Matriz con valores Aleatorios del 1 al 100
  * guardada por filas. Acceso mediante A[i * DIM + j]
  * @param A Matriz a inicializar
@@ -39,31 +44,27 @@ double dwalltime()
     return sec;
 }
 
-/** Guarda la Matriz (guardada por filas) en un Archivo.
- * @param A Matriz a guardar
- */
-void print_txt_filas(float *A)
-{
-    FILE *fp = fopen("impresionMatriz.txt", "w");
-    for (int i = 0; i < DIM; i++)
-    {
-        for (int j = 0; j < DIM; j++)
-        {
-            fprintf(fp, " | %f", A[i * DIM + j]);
-        }
-        fprintf(fp, "\n"); // Salto a la proxima Fila en el .txt
-    }
-    fclose(fp);
-}
+
+/***************************************************************************/
+/*                       Codigo Principal                                  */
+/***************************************************************************/
 
 int main(int argc, char *argv[])
 {
 
     // Variable auxiliares
     double timetick;
+    int numThreads = 4;
     int i, j;
     bool convergencia;
     register float aux; // Register for multiple accesses to the same variable
+
+    // Controla los argumentos al programa
+    if ((argc != 3) || ((DIM = atoi(argv[1])) <= 0) || ((numThreads = atoi(argv[2])) <= 0))
+    {
+        printf("\nUsar: %s DIM numThreads\n  DIM: Dimension de la Matriz (DIM * DIM)\n  numThreads: Numero de threads\n", argv[0]);
+        exit(1);
+    }
 
     /* Alocacion de memoria para Matriz N*N cuadrada */
     A = (float *)malloc(sizeof(float) * DIM * DIM);
@@ -72,7 +73,6 @@ int main(int argc, char *argv[])
     init_matrix_ceros_y_unos_filas(A);
 
     /* Seteo el Numero de Threads a utilizar. */
-    int numThreads = 4;
     omp_set_num_threads(numThreads);
 
     /* Inicio de la medicion de tiempo */
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
                     B[i * DIM + j] = (aux * 0.111111);
                 };
             }
-        } // Barrera implicita de OpenMP
+        } // Barrera implicita de OMP
 
         /** Parte II - Verificacion de Convergencia. */
 
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
             {
                 convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
             }
-        } // Barrera implicita de OpenMP
+        } // Barrera implicita de OMP
 
         if (!convergencia)
         {

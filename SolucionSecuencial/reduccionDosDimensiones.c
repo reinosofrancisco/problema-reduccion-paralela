@@ -12,6 +12,10 @@
 int DIM = 8;
 float *A, *B;
 
+/***************************************************************************/
+/*                       Funciones Auxiliares                              */
+/***************************************************************************/
+
 /** Inicializa la Matriz con valores Aleatorios del 1 al 100
  * guardada por filas. Acceso mediante A[i * DIM + j]
  * @param A Matriz a inicializar
@@ -38,25 +42,19 @@ double dwalltime()
     return sec;
 }
 
-/** Guarda la Matriz (guardada por filas) en un Archivo.
- * @param A Matriz a guardar
- */
-void print_txt_filas(float *A)
-{
-    FILE *fp = fopen("impresionMatriz.txt", "w");
-    for (int i = 0; i < DIM; i++)
-    {
-        for (int j = 0; j < DIM; j++)
-        {
-            fprintf(fp, " | %f", A[i * DIM + j]);
-        }
-        fprintf(fp, "\n"); // Salto a la proxima Fila en el .txt
-    }
-    fclose(fp);
-}
+/***************************************************************************/
+/*                       Codigo Principal                                  */
+/***************************************************************************/
 
 int main(int argc, char *argv[])
 {
+
+    // Controla los argumentos al programa
+    if ((argc != 2) || ((DIM = atoi(argv[1])) <= 0))
+    {
+        printf("\nUsar: %s DIM\n  DIM: Dimension de la Matriz (DIM * DIM)\n", argv[0]);
+        exit(1);
+    }
 
     // Variable auxiliares
     double timetick;
@@ -78,93 +76,73 @@ int main(int argc, char *argv[])
 
         /** Parte I - Calculo de Vector Reducido*/
 
-        /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
-        for (i = 1; i < DIM - 1; i++)
+        for (i = 0; i < DIM; i++)
         {
-            for (j = 1; j < DIM - 1; j++)
+            for (j = 0; j < DIM; j++)
             {
-                aux = 0;
-                aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                B[i * DIM + j] = (aux / 9);
-
-                /*
-                A[i-1,j],   A[i-1,j-1],     A[i-1,j+1],
-                A[i,j],     A[i,j-1],       A[i,j+1],
-                A[i+1,j],   A[i+1,j-1],     A[i+1,j+1]
-                Calculo del promedio con los 4-6-8 vecinos + el valor A[pos,pos] */
-
-                /* Exceptuar los casos de i = 0, i = DIM - 1, j = 0 y j = DIM - 1 ya que son extremos*/
+                if (i == 0 && j == 0)
+                {
+                    // Primer cubito Primer fila
+                    B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) * (0.25);
+                }
+                else if (i == 0 && j == DIM - 1)
+                {
+                    // Ultimo cubito Primer fila
+                    B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
+                }
+                else if (i == DIM - 1 && j == 0)
+                {
+                    // Primer cubito Ultima fila
+                    B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) * (0.25);
+                }
+                else if (i == DIM - 1 && j == DIM - 1)
+                {
+                    // Ultimo cubito Ultima fila
+                    B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
+                }
+                else if (i == 0)
+                {
+                    // Primer fila sin puntas
+                    aux = 0;
+                    aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
+                    aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
+                    B[i * DIM + j] = (aux * 0.166666);
+                }
+                else if (i == DIM - 1)
+                {
+                    // Ultima fila sin puntas
+                    aux = 0;
+                    aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
+                    aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
+                    B[i * DIM + j] = (aux * 0.166666);
+                }
+                else if (j == 0)
+                {
+                    // Primera columna sin puntas
+                    aux = 0;
+                    aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
+                    aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
+                    B[i * DIM + j] = (aux * 0.166666);
+                }
+                else if (j == DIM - 1)
+                {
+                    // Ultima columna sin puntas
+                    aux = 0;
+                    aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
+                    aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
+                    B[i * DIM + j] = (aux * 0.166666);
+                }
+                else
+                {
+                    // Caso comun
+                    aux = 0;
+                    aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
+                    aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
+                    aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
+                    B[i * DIM + j] = (aux * 0.111111);
+                };
             }
         }
-
-        /** CALCULO PARA LA PRIMER Y ULTIMA FILA,
-         * Y LA PRIMER Y ULTIMA COLUMNA.
-         * SIN TOMAR LAS PUNTAS
-         */
-
-        /* Calculo para i = 0 sin tomar las puntas. Esto toma la primer fila */
-        i = 0;
-        for (j = 1; j < DIM - 1; j++)
-        {
-            aux = 0;
-            aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-            aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-            B[i * DIM + j] = (aux / 6);
-        }
-
-        /* Calculo para i = DIM - 1 sin tomar las puntas. Esto toma la ultima fila */
-        i = DIM - 1;
-        for (j = 1; j < DIM - 1; j++)
-        {
-            aux = 0;
-            aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-            aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-            B[i * DIM + j] = (aux / 6);
-        }
-
-        /* Calculo para j = 0 sin tomar las puntas. Esto toma la primer columna */
-        j = 0;
-        for (i = 1; i < DIM - 1; i++)
-        {
-            aux = 0;
-            aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-            aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
-            B[i * DIM + j] = (aux / 6);
-        }
-
-        /* Calculo para j = DIM - 1 sin tomar las puntas. Esto toma la ultima columna */
-        j = DIM - 1;
-        for (i = 1; i < DIM - 1; i++)
-        {
-            aux = 0;
-            aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-            aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
-            B[i * DIM + j] = (aux / 6);
-        }
-
-        /** CALCULO PARA LAS PUNTAS */
-
-        /* Calculo para i = 0 y j = 0. Esto toma la primer casilla [0,0] */
-        i = 0;
-        j = 0;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) / 4;
-
-        /* Calculo para i = 0 y j = DIM - 1. Esto toma la ultima casilla [0,DIM - 1]*/
-        i = 0;
-        j = DIM - 1;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) / 4;
-
-        /* Calculo para i = DIM - 1 y j = 0. Esto toma la primer casilla [DIM - 1,0]*/
-        i = DIM - 1;
-        j = 0;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) / 4;
-
-        /* Calculo para i = DIM - 1 y j = DIM - 1. Esto toma la ultima casilla [DIM - 1,DIM - 1]*/
-        i = DIM - 1;
-        j = DIM - 1;
-        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) / 4;
 
         /** Parte II - Verificacion de Convergencia. */
 
@@ -174,19 +152,12 @@ int main(int argc, char *argv[])
         {
             for (j = 0; j < DIM; j++)
             {
-                if (fabs(B[0] - B[i * DIM + j]) > PRESICION)
-                {
-                    convergencia = false;
-                }
+                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
             }
         }
 
-        print_txt_filas(A);
-
         if (!convergencia)
         {
-            printf("El resultado no converge | Recalculando...\n");
-
             // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
             for (i = 0; i < DIM; i++)
             {

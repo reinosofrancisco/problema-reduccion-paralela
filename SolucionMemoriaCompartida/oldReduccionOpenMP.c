@@ -60,10 +60,19 @@ int main(int argc, char *argv[])
 {
 
     // Variable auxiliares
+    int numThreads;
     double timetick;
     int i, j;
     bool convergencia;
     register float aux; // Register for multiple accesses to the same variable
+
+    // Controla los argumentos al programa
+    if ((argc != 3) || ((DIM = atoi(argv[1])) <= 0) || ((numThreads = atoi(argv[2])) <= 0))
+    {
+        printf("\nUsar: %s DIM numThreads\n  DIM: Dimension de la Matriz (DIM * DIM)\n  numThreads: Numero de threads\n", argv[0]);
+        exit(1);
+    }
+    
 
     /* Alocacion de memoria para Matriz N*N cuadrada */
     A = (float *)malloc(sizeof(float) * DIM * DIM);
@@ -72,7 +81,6 @@ int main(int argc, char *argv[])
     init_matrix_ceros_y_unos_filas(A);
 
     /* Seteo el Numero de Threads a utilizar. */
-    int numThreads = 4;
     omp_set_num_threads(numThreads);
 
     /* Inicio de la medicion de tiempo */
@@ -178,7 +186,7 @@ int main(int argc, char *argv[])
         {
             for (j = 0; j < DIM; j++)
             {
-                convergencia = convergencia && !(fabs(B[0] - B[i]) > PRESICION);
+                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
             }
         }
 
