@@ -36,7 +36,7 @@ void funcionThreadMaster(int nroProcesos, int N, int id) {
 
     //Aloco espacio para el arreglo y lo completo
     float* A = (float *)malloc(sizeof(float) * N);
-    float* resultado = (float *)malloc(sizeof(float) * ((N/nroProcesos)));
+    float* resultado = (float *)malloc(sizeof(float) * N);
     
     for (int i = 0; i < N; i++)
     {
@@ -65,9 +65,27 @@ void funcionThreadMaster(int nroProcesos, int N, int id) {
             }
         }
 
+        for (int i = 1; i < nroProcesos; i++) {    
+            MPI_Recv(&resultado[i * (N/nroProcesos)], (N/nroProcesos), MPI_FLOAT, i, 98, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+
+        convergencia = 1;
+
+        for (int i = 0; i < N; i++) {
+            convergencia = convergencia && (fabs(resultado[0] - resultado[i]) < PRESICION);
+        }
+
+        for (int i = 1; i < nroProcesos; i++) {
+            MPI_Send(&convergencia, 1, MPI_INT, i, 97, MPI_COMM_WORLD);
+        }
+
+        for (int i = 0; i < N; i++) {
+            A[i] = resultado[i];
+        }
+
     } while (!convergencia);
 
-     printf("Hilo con id: %d termino!! \n", id);
+    printf("Hilo con id: %d termino!! \n", id);
 
     free(A);
     free(resultado);
@@ -87,7 +105,7 @@ void funcionThreads(int id, int N, int nroProcesos) {
 
         MPI_Recv(array, cantArray, MPI_FLOAT, 0, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         //Arranco en 1 porque como elemeto 0 le mando el ultimo valor del thread anterior
-        for (int i = 1; i < cantArray; i++) {
+        for (int i = 1; i < cantArray - 1; i++) {
              if (i == (N/nroProcesos) - 1 && id == nroProcesos - 1) {
                 resultado[i] = (array[i] + array[i - 1]) * 0.5;
             } else {
@@ -95,9 +113,11 @@ void funcionThreads(int id, int N, int nroProcesos) {
             }
         }
 
-       
+        MPI_Send(resultado, (N/nroProcesos), MPI_FLOAT, 0, 98, MPI_COMM_WORLD);
 
-    } while (!convergenciaGeneral);
+        MPI_Recv(&convergencia, 1, MPI_INT, 0, 97, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    } while (!convergencia);
 
     printf("Hilo con id: %d termino!! \n", id);
 
