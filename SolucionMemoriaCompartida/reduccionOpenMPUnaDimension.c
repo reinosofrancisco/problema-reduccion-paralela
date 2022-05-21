@@ -88,11 +88,11 @@ int main(int argc, char *argv[])
         for (int i = 0; i < DIM; i++)
         {
             if (i == 0) {
-                B[i] = (A[i] + A[i+1]) / 2;
+                B[i] = (A[i] + A[i+1]) * 0.5;
             } else if (i == DIM - 1) {
-                B[i] = (A[i-1] + A[i]) / 2;
+                B[i] = (A[i-1] + A[i]) * 0.5;
             } else {
-                B[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
+                B[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
             }
         }
 

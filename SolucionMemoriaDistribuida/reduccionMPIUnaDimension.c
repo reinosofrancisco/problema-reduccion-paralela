@@ -59,9 +59,9 @@ void funcionThreadMaster(int nroProcesos, int N, int id) {
     do { 
         for (int i = 0; i < (N/nroProcesos) + 2; i++) {
             if (i == 0) {
-                resultado[i] = (A[i] + A[i+1]) / 2;
+                resultado[i] = (A[i] + A[i+1]) * 0.5;
             } else {
-                resultado[i] = (A[i - 1] + A[i] + A[i + 1]) / 3;
+                resultado[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
