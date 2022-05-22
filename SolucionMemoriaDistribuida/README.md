@@ -2,7 +2,7 @@
 
 Modo de compilacion
 ```
-    mpicc  -o output input.c
+    mpicc -o output input.c
 ```
 
 Uso
