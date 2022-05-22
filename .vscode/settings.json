@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "array": "c",
+        "*.tcc": "c",
+        "random": "c",
+        "numeric": "c",
+        "utility": "c",
+        "stdbool.h": "c"
+    }
+}
