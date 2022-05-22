@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     /** Numero de Proceos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
     /** Pedazo del vector que le corresponde a cada hijo. */
-    int slaveSize = (DIM - 2) / slaveTaskCount;
+    int slaveSize = DIM / nProcs;
 
     /** Alocacion de memoria de los vectores*/
     A = (float *)malloc(sizeof(float *) * DIM);
@@ -83,25 +83,32 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio A a los procesos y calculo */
         do
         {
-            /** Los calculos se realizan por los procesos esclavos de ID > 0
-             *  Each message's tag is 1 */
-            // Offset en 1 para saltearme el primer elemento.
-            offset = 1;
-
+            /** Message Tag 1 para el envio del Vector y el Offset.
+             * Offset en 1 para saltearme las puntas.
+            */
+            offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
                 // Envio el OFFSET del proceso esclavo.
-                MPI_Send(&offset, 1, MPI_INT, dest, 1, MPI_COMM_WORLD);
+                MPI_Send(&offset, 1, MPI_INT, dest, 1, MPI_COMM_WORLD); 
                 // Envio el Vector desde la posicion (OFFSET - 1) para que pueda calcular el vector reducido.
-                MPI_Send(&A[offset - 1], slaveSize + 1, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+                MPI_Send(&A[offset - 1], slaveSize + 2, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
                 // Modifico el Offset salteando por chunks de datos
                 offset += slaveSize;
             }
 
-            /** Mientras tanto, calculo las puntas */
-            B[0] = ((A[0] + A[1]) * (0.5));
-            B[DIM - 1] = ((A[DIM - 2] + A[DIM - 1]) * (0.5));
+            /** El Root calcula el primer chunk de datos */
+            for (i = 0; i < slaveSize; i++)
+            {
+                if (i == 0){
+                    B[i] = ((A[i] + A[i + 1]) * (0.5));
+                }
+                else{
+                    B[i] = (A[i - 1] + A[i] + A[i + 1]) * (0.333333);
+                }
+                
+            }
 
             // el Root espera a que todos los procesos terminen. El message tag es 2
             for (int i = 1; i <= slaveTaskCount; i++)
@@ -152,18 +159,26 @@ int main(int argc, char *argv[])
             /** El esclavo espera por el mensaje con tag 1 que envia el root
              * Recibo el offset, pedazo de A y la totalidad de la Matriz B.*/
             MPI_Recv(&offset, 1, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
-            MPI_Recv(&A[offset - 1], slaveSize + 1, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+            MPI_Recv(&A[offset - 1], slaveSize + 2, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
 
             for (i = offset; i < offset + slaveSize; i++)
             {
-                B[i] = (A[i - 1] + A[i] + A[i + 1]) * (0.333333);
+                if (i == DIM - 1){
+                    B[i] = ((A[i - 1] + A[i]) * (0.5));
+                }
+                else{
+                    B[i] = (A[i - 1] + A[i] + A[i + 1]) * (0.333333);
+                }
+                
             }
+            
             /** Envio el Offset y Resultado B con Message Tag = 2*/
             MPI_Send(&offset, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
             MPI_Send(&B[offset], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
             /** Mensaje para verificar convergencia con Message Tag = 3*/
             MPI_Recv(&convergencia, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
+
         } while (!convergencia);
     }
 
