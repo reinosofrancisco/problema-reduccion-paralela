@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 8; // Tamaño del Vector
+int DIM = 512; // Tamaño del Vector
 
 float *A; // Vector A la cual sera enviada a los procesos
 float *B; // Vector B Resultado.
@@ -43,6 +43,17 @@ void print_vector(float *m)
         printf("|");
     }
     printf("\n");
+}
+
+/** Funcion para comparar tiempos */
+double dwalltime()
+{
+    double sec;
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    sec = tv.tv_sec + tv.tv_usec / 1000000.0;
+    return sec;
 }
 
 /** *******************************************************************
@@ -80,6 +91,10 @@ int main(int argc, char *argv[])
         {
             A[i] = rand() / (float)RAND_MAX;
         }
+
+        /* Inicio de la medicion de tiempo */
+        double timetick;
+        timetick = dwalltime();
 
         /** Mientras B no converga, envio A a los procesos y calculo */
         do
@@ -148,7 +163,6 @@ int main(int argc, char *argv[])
                 convergencia = convergencia && convergenciaLocal[i];
             }
 
-
             // Si no converge, el root copia todos los valores de B a A.
             if (!convergencia)
             {
@@ -166,13 +180,19 @@ int main(int argc, char *argv[])
             }
 
         } while (!convergencia);
-        
-        print_vector(B);
+
+        /* Fin de la medicion de tiempo */
+        printf("Tiempo en segundos para convergencia %f manejado por el hijo ID = %d\n", (dwalltime() - timetick), ID);
+
+        // print_vector(B);
     }
 
     /** COMPORTAMIENTO PROCESOS HIJOS */
     if (ID > 0)
     {
+        /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
+        double timetick;
+        timetick = dwalltime();
         do
         {
             // El Source sera siempre el root (Master) con ID = 0
@@ -221,6 +241,9 @@ int main(int argc, char *argv[])
             MPI_Recv(&convergencia, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
 
         } while (!convergencia);
+
+        /* Fin de la medicion de tiempo */
+        printf("Tiempo en segundos para convergencia %f para el hijo ID = %d\n", (dwalltime() - timetick),ID);
     }
 
     free(A);
