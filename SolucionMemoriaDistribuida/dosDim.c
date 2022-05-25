@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 4; // Tamaño de la matriz
+int DIM = 16; // Tamaño de la matriz
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
@@ -96,8 +96,7 @@ int main(int argc, char *argv[])
     /** Pedazo del vector que le corresponde a cada hijo. */
     slaveSize = (DIM * DIM) / nProcs;
 
-    bool convergencia;
-    bool convergenciaLocal[DIM];
+    int convergencia;
 
     int offset = 0;
     register float aux; // Register for multiple accesses to the same variable
@@ -121,7 +120,7 @@ int main(int argc, char *argv[])
 
         printf("Matriz Original\n");
         print_matrix_f(A);
-
+        sleep(2);
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
@@ -136,13 +135,15 @@ int main(int argc, char *argv[])
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
                 /* Envio el Vector A desde OFFSET - DIM para incluir las filas externas. */
-                MPI_Send(&A[offset - DIM], slaveSize + (2 * DIM), MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+                MPI_Bsend(&A[offset - DIM], slaveSize + (2 * DIM), MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
                 // Modifico el Offset salteando por chunks de datos
                 offset += slaveSize;
             }
 
             /** El Root calcula el primer chunk de datos */
+            print_slave_f(A, slaveSize);
+            sleep(2);
             for (i = 0; i < slaveSize; i++)
             {
                 for (j = 0; j < DIM; j++)
@@ -197,10 +198,11 @@ int main(int argc, char *argv[])
             {
                 source = i;
                 /** Recibo la parte de B que calculo el Slave. No recibo offset. */
-                MPI_Recv(&B[offset], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
+                MPI_Recv(B + offset, slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
                 /** Envio B[0] para que cada hilo calcule su propia convergencia. */
-                MPI_Send(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+                printf("Valor a enviar para comparar: %f \n", B[0]);
+                MPI_Bsend(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
                 offset += slaveSize;
             }
@@ -209,23 +211,25 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = true;
+            convergencia = 1;
 
+            MPI_Barrier(MPI_COMM_WORLD);
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < slaveSize; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+                    convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
                 }
             }
 
             // El root recibe la respuesta de los procesos esclavos
+            int convergenciaAux;
             for (int i = 1; i <= slaveTaskCount; i++)
             {
                 source = i;
-                MPI_Recv(&convergenciaLocal[i], 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
-                convergencia = convergencia && convergenciaLocal[i];
+                MPI_Recv(&convergenciaAux, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
+                convergencia = convergencia && convergenciaAux;
             }
 
             // Si no converge, el root copia todos los valores de B a A.
@@ -244,11 +248,12 @@ int main(int argc, char *argv[])
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
                 // Envio el valor de Convergencia a todos los hijos para que sepan si seguir o no reduciendo.
-                MPI_Send(&convergencia, 1, MPI_INT, dest, 3, MPI_COMM_WORLD);
+                printf("Convergio: %d \n", convergencia);
+                MPI_Bsend(&convergencia, 1, MPI_INT, dest, 3, MPI_COMM_WORLD);
             }
 
-            print_matrix_f(A);
-            sleep(1);
+    //        print_matrix_f(A);
+   //         sleep(1);
 
         } while (!convergencia);
 
@@ -268,7 +273,7 @@ int main(int argc, char *argv[])
          */
         A = (float *)malloc(sizeof(float) * (slaveSize + (2 * DIM)));
         /* en B[DIM] comienza lo que calcula cada hilo para B. */
-        B = (float *)malloc(sizeof(float) * (slaveSize + (2 * DIM)));
+        B = (float *)malloc(sizeof(float) * (slaveSize));
 
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
@@ -282,31 +287,26 @@ int main(int argc, char *argv[])
             source = 0;
             /** El esclavo espera por el mensaje con tag 1 que envia el root
              * Recibo entonces el pedazo de A que me corresponde + Las 2 puntas. */
-            MPI_Recv(&A[0], slaveSize + (2 * DIM), MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+            MPI_Recv(A, slaveSize + (2 * DIM), MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
 
-            if (ID == 1)
-            {
-                // sleep(1);
-                // print_slave_f(A, slaveSize);
-            }
 
             /** Calculo para mis datos, desde i = 1 hasta slaveSize + DIM - 1. */
-            for (i = 1; i < slaveSize + DIM; i++)
+            for (i = 1; i < slaveSize; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
 
-                    if ((ID == slaveTaskCount) && (i == slaveSize + DIM - 1))
+                    if ((ID == slaveTaskCount) && (i == slaveSize - 1))
                     {
                         if (j == 0)
                         {
                             // Primer cubito, Ultima fila
-                            B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
+                            B[(i -  1) * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
                         }
                         else if (j == DIM - 1)
                         {
                             // Ultimo cubito, Ultima fila
-                            B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
+                            B[(i -  1) * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
                         }
                         else
                         {
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
                             aux = 0;
                             aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
                             aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                            B[i * DIM + j] = (aux * 0.166666);
+                            B[(i -  1) * DIM + j] = (aux * 0.166666);
                         }
                     }
                     else if (j == 0)
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
                         aux = 0;
                         aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
                         aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
+                        B[(i -  1) * DIM + j] = (aux * 0.166666);
                     }
                     else if (j == DIM - 1)
                     {
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
                         aux = 0;
                         aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
                         aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
+                        B[(i -  1) * DIM + j] = (aux * 0.166666);
                     }
                     else
                     {
@@ -340,33 +340,34 @@ int main(int argc, char *argv[])
                         aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
                         aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
                         aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.111111);
+                        B[(i -  1) * DIM + j] = (aux * 0.111111);
                     }
                 }
             }
 
-            /** Envio el resultado B con Message Tag = 2.
-             * Recordar que lo calculado esta exceptuando las puntas desde B[1]. */
-            MPI_Send(&B[DIM], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+            /** Envio el resultado B con Message Tag = 2. */
+            MPI_Bsend(B, slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
             /** Recibo B[0] para calcular mi propia convergencia.
              * Lo recibo en la variable aux. */
-            MPI_Recv(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
-
+            float auxConvergencia;
+            MPI_Recv(&auxConvergencia, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
+            printf("Hilo id: %d valor a comparar: %f \n", ID, auxConvergencia);           
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = true;
-
-            for (i = 1; i < slaveSize + DIM; i++)
+            int convergenciaPropia = 1;
+            
+            MPI_Barrier(MPI_COMM_WORLD);
+            for (i = 0; i < slaveSize; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
+                    convergenciaPropia = convergenciaPropia && (fabs(auxConvergencia - B[i * DIM + j]) < PRESICION);
                 }
             }
 
             // Envio mi convergencia como proceso Hijo para que el Padre compare con las demas.
-            MPI_Send(&convergencia, 1, MPI_INT, source, 3, MPI_COMM_WORLD);
+            MPI_Bsend(&convergenciaPropia, 1, MPI_INT, source, 3, MPI_COMM_WORLD);
 
             /** Mensaje para verificar convergencia con Message Tag = 3.
              * Recibo del padre si todos los procesos convergen. Caso contrario, vuelvo a calcular.
