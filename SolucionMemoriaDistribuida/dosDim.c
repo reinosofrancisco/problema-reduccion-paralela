@@ -85,9 +85,6 @@ int main(int argc, char *argv[])
 
     int i, j, k;
     int dest, source;
-    int offset = 0;
-    bool convergencia;
-    bool convergenciaLocal[DIM];
 
     /** Init de MPI y obtencion del ID y el Numero de Procesos*/
     MPI_Init(&argc, &argv);
@@ -99,6 +96,10 @@ int main(int argc, char *argv[])
     /** Pedazo del vector que le corresponde a cada hijo. */
     slaveSize = (DIM * DIM) / nProcs;
 
+    bool convergencia;
+    bool convergenciaLocal[DIM];
+
+    int offset = 0;
     register float aux; // Register for multiple accesses to the same variable
 
     /** COMPORTAMIENTO PROCESO PADRE */
