@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 2048; // Tamaño del Vector
+int DIM = 4096; // Tamaño del Vector
 
 float *A; // Vector A la cual sera enviada a los procesos
 float *B; // Vector B Resultado.
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
         En B[1] comienza lo que calcula cada hilo. */
         B = (float *)malloc(sizeof(float *) * (slaveSize + 1));
 
-        register float aux; // Register for multiple accesses to the same variable
+        float aux; // Register for multiple accesses to the same variable
 
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
