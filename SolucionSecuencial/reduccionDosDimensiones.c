@@ -26,7 +26,7 @@ void init_matrix_ceros_y_unos_filas(float *A)
     {
         for (int j = 0; j < DIM; j++)
         {
-            A[i * DIM + j] = (rand() % 2);
+            A[i * DIM + j] = rand() / (float)RAND_MAX;
         }
     }
 }
