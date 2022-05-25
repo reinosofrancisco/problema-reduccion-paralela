@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 4; // Tamaño de la matriz
+int DIM = 32; // Tamaño de la matriz
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
@@ -35,15 +35,15 @@ int slaveSize;
  * *************  DECLARACION DE PROCESOS   ***************************
  * ******************************************************************* */
 
-void print_matrix_f(float *m)
+void print_matrix_f(float *m, int DIMENSION)
 {
     int i, j = 0;
 
-    for (i = 0; i < DIM; i++)
+    for (i = 0; i < DIMENSION; i++)
     {
         printf("\n\t| ");
-        for (j = 0; j < DIM; j++)
-            printf("%2f ", m[i * DIM + j]);
+        for (j = 0; j < DIMENSION; j++)
+            printf("%2f ", m[i * DIMENSION + j]);
         printf("|");
     }
     printf("\n");
@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
     {
 
         /** Alocacion de memoria de la matriz para el padre */
-        A = (float *)malloc(sizeof(float) * DIM * DIM);
-        B = (float *)malloc(sizeof(float) * DIM * DIM);
+        A = (float *)malloc(sizeof(float *) * DIM * DIM);
+        B = (float *)malloc(sizeof(float *) * DIM * DIM);
 
         /** Relleno el Vector A con valores entre 0 y 1 */
         for (int i = 0; i < DIM; i++)
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         }
 
         printf("Matriz Original\n");
-        print_matrix_f(A);
+        // print_matrix_f(A, DIM);
 
         /* Inicio de la medicion de tiempo */
         double timetick;
@@ -142,55 +142,7 @@ int main(int argc, char *argv[])
                 offset += slaveSize;
             }
 
-            /** El Root calcula el primer chunk de datos */
-            for (i = 0; i < slaveSize; i++)
-            {
-                for (j = 0; j < DIM; j++)
-                {
-                    if (i == 0 && j == 0)
-                        // Primer cubito Primer fila
-                        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) * (0.25);
-                    else if (i == 0 && j == DIM - 1)
-                    {
-                        // Ultimo cubito Primer fila
-                        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
-                    }
-                    else if (i == 0)
-                    {
-                        // Primer fila sin puntas
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
-                    }
-                    else if (j == 0)
-                    {
-                        // Primera columna sin puntas
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                        aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
-                    }
-                    else if (j == DIM - 1)
-                    {
-                        // Ultima columna sin puntas
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                        aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
-                    }
-                    else
-                    {
-                        // Caso comun
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                        aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.111111);
-                    }
-                }
-            }
-
+            
             // el Root espera a que todos los procesos terminen. El message tag es 2
             offset = slaveSize;
             for (int i = 1; i <= slaveTaskCount; i++)
@@ -247,8 +199,7 @@ int main(int argc, char *argv[])
                 MPI_Send(&convergencia, 1, MPI_INT, dest, 3, MPI_COMM_WORLD);
             }
 
-            print_matrix_f(A);
-            sleep(1);
+            print_matrix_f(A, DIM);
 
         } while (!convergencia);
 
@@ -266,9 +217,9 @@ int main(int argc, char *argv[])
          * La primer fila es A[0] hasta A[DIM - 1]
          * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]
          */
-        A = (float *)malloc(sizeof(float) * (slaveSize + (2 * DIM)));
+        A = (float *)malloc(sizeof(float *) * (slaveSize + (2 * DIM)));
         /* en B[DIM] comienza lo que calcula cada hilo para B. */
-        B = (float *)malloc(sizeof(float) * (slaveSize + (2 * DIM)));
+        B = (float *)malloc(sizeof(float *) * (slaveSize + (2 * DIM)));
 
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
@@ -286,64 +237,12 @@ int main(int argc, char *argv[])
 
             if (ID == 1)
             {
-                // sleep(1);
-                // print_slave_f(A, slaveSize);
+                sleep(2);
+                print_slave_f(A, slaveSize);
+                sleep(500);
             }
 
-            /** Calculo para mis datos, desde i = 1 hasta slaveSize + DIM - 1. */
-            for (i = 1; i < slaveSize + DIM; i++)
-            {
-                for (j = 0; j < DIM; j++)
-                {
-
-                    if ((ID == slaveTaskCount) && (i == slaveSize + DIM - 1))
-                    {
-                        if (j == 0)
-                        {
-                            // Primer cubito, Ultima fila
-                            B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
-                        }
-                        else if (j == DIM - 1)
-                        {
-                            // Ultimo cubito, Ultima fila
-                            B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
-                        }
-                        else
-                        {
-                            // Ultima fila, sin puntas
-                            aux = 0;
-                            aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                            aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                            B[i * DIM + j] = (aux * 0.166666);
-                        }
-                    }
-                    else if (j == 0)
-                    {
-                        // Primer Columna, sin puntas
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                        aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
-                    }
-                    else if (j == DIM - 1)
-                    {
-                        // Ultima columna, sin puntas
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                        aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
-                        B[i * DIM + j] = (aux * 0.166666);
-                    }
-                    else
-                    {
-                        // Caso comun
-                        aux = 0;
-                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                        aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                        B[i * DIM + j] = (aux * 0.111111);
-                    }
-                }
-            }
+            
 
             /** Envio el resultado B con Message Tag = 2.
              * Recordar que lo calculado esta exceptuando las puntas desde B[1]. */
@@ -357,11 +256,11 @@ int main(int argc, char *argv[])
 
             convergencia = true;
 
-            for (i = 1; i < slaveSize + DIM; i++)
+            for (i = DIM; i < slaveSize + DIM; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
+                    convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
                 }
             }
 
