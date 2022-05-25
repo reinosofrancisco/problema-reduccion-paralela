@@ -196,6 +196,8 @@ int main(int argc, char *argv[])
         En B[1] comienza lo que calcula cada hilo. */
         B = (float *)malloc(sizeof(float *) * (slaveSize + 1));
 
+        register float aux; // Register for multiple accesses to the same variable
+
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
         timetick = dwalltime();
@@ -229,9 +231,8 @@ int main(int argc, char *argv[])
              * Recordar que lo calculado esta exceptuando las puntas desde B[1]. */
             MPI_Send(&B[1], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
-            /** Recibo B[0] para calcular mi propia convergencia.
-             * B[0] siempre esta libre, ya que nunca es asignado por ser punta. */
-            MPI_Recv(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
+            /** Recibo B[0] para calcular mi propia convergencia.*/
+            MPI_Recv(&aux, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
             /** Parte II - Verificacion de Convergencia. */
 
@@ -239,7 +240,7 @@ int main(int argc, char *argv[])
 
             for (i = 1; i < slaveSize + 1; i++)
             {
-                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+                convergencia = convergencia && (fabs(aux - B[i]) < PRESICION);
             }
 
             // Envio mi convergencia como proceso Hijo para que el Padre compare con las demas.
