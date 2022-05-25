@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 4; // Tamaño de la matriz
+int DIM = 16; // Tamaño de la matriz
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
@@ -248,7 +248,6 @@ int main(int argc, char *argv[])
             }
 
             print_matrix_f(A);
-            sleep(1);
 
         } while (!convergencia);
 
@@ -286,12 +285,14 @@ int main(int argc, char *argv[])
 
             if (ID == 1)
             {
-                // sleep(1);
-                // print_slave_f(A, slaveSize);
+                sleep(2);
+                print_slave_f(A, slaveSize);
+                sleep(500);
             }
 
-            /** Calculo para mis datos, desde i = 1 hasta slaveSize + DIM - 1. */
-            for (i = 1; i < slaveSize + DIM; i++)
+            /** Calculo para mis datos, desde i = DIM hasta slaveSize + DIM - 1. */
+            // TODO: CALCULAR REDUCCION
+            for (i = DIM; i < slaveSize + DIM; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
@@ -357,11 +358,11 @@ int main(int argc, char *argv[])
 
             convergencia = true;
 
-            for (i = 1; i < slaveSize + DIM; i++)
+            for (i = DIM; i < slaveSize + DIM; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
+                    convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
                 }
             }
 
