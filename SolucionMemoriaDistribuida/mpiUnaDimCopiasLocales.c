@@ -97,8 +97,6 @@ int main(int argc, char *argv[])
         double timetick;
         timetick = dwalltime();
 
-        
-
         /** Mientras B no converga, envio A a los procesos y calculo */
         do
         {
