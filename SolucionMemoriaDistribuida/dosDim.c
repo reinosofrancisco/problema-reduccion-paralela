@@ -18,12 +18,14 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 4; // Tamaño de la matriz
+int DIM = 16; // Tamaño de la matriz
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
 
 int from, to; // Rangos por los que se divide el matriz A
+
+int slaveSize;
 
 /** ******************************************************************************
  ****** Fin de Variables Globales al Programa pero Locales a la Maquina Actual. **
@@ -33,14 +35,31 @@ int from, to; // Rangos por los que se divide el matriz A
  * *************  DECLARACION DE PROCESOS   ***************************
  * ******************************************************************* */
 
-void print_matrix_f(int *m, int DIMENSION)
+void print_matrix_f(float *m, int DIMENSION)
 {
     int i, j = 0;
+
     for (i = 0; i < DIMENSION; i++)
     {
         printf("\n\t| ");
         for (j = 0; j < DIMENSION; j++)
-            printf("%2d ", m[i * DIMENSION + j]);
+            printf("%2f ", m[i * DIMENSION + j]);
+        printf("|");
+    }
+    printf("\n");
+}
+
+void print_slave_f(float *m, int slaveSize)
+{
+    int i, j = 0;
+    int slaveSize_con_filas = slaveSize + (2 * DIM);
+    int nFilas = slaveSize_con_filas / DIM;
+    printf("Printing Matrix...");
+    for (i = 0; i < nFilas; i++)
+    {
+        printf("\n\t| ");
+        for (j = 0; j < DIM; j++)
+            printf("%2f ", m[i * DIM + j]);
         printf("|");
     }
     printf("\n");
@@ -78,7 +97,7 @@ int main(int argc, char *argv[])
     /** Numero de Proceos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
     /** Pedazo del vector que le corresponde a cada hijo. */
-    int slaveSize = (DIM * DIM) / nProcs;
+    slaveSize = (DIM * DIM) / nProcs;
 
     register float aux; // Register for multiple accesses to the same variable
 
@@ -99,6 +118,9 @@ int main(int argc, char *argv[])
             }
         }
 
+        printf("Matriz Original\n");
+        print_matrix_f(A, DIM);
+
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
@@ -112,13 +134,12 @@ int main(int argc, char *argv[])
             offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
-                /* Envio el Vector A desde OFFSET - 1 para incluir puntas*/
+                /* Envio el Vector A desde OFFSET - DIM para incluir las filas externas. */
                 MPI_Send(&A[offset - DIM], slaveSize + (2 * DIM), MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
                 // Modifico el Offset salteando por chunks de datos
                 offset += slaveSize;
             }
-
 
             /** El Root calcula el primer chunk de datos */
             for (i = 0; i < slaveSize; i++)
@@ -225,6 +246,8 @@ int main(int argc, char *argv[])
                 MPI_Send(&convergencia, 1, MPI_INT, dest, 3, MPI_COMM_WORLD);
             }
 
+            print_matrix_f(A, DIM);
+
         } while (!convergencia);
 
         /* Fin de la medicion de tiempo */
@@ -258,6 +281,13 @@ int main(int argc, char *argv[])
             /** El esclavo espera por el mensaje con tag 1 que envia el root
              * Recibo entonces el pedazo de A que me corresponde + Las 2 puntas. */
             MPI_Recv(&A[0], slaveSize + (2 * DIM), MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+
+            if (ID == 1)
+            {
+                sleep(2);
+                print_slave_f(A, slaveSize);
+                sleep(500);
+            }
 
             /** Calculo para mis datos, desde i = DIM hasta slaveSize + DIM - 1. */
             // TODO: CALCULAR REDUCCION
