@@ -25,6 +25,7 @@ Se utiliza para el root una matriz A de DIM * DIM con los valores originales, y 
 El hilo root (ID == 0) se encargara del primer chunk de datos de la matriz y repartira el resto. <br>
 Un chunk de datos esta dado por chunk_size = (DIM * DIM) / N_PROCS. <br>
 Por ende, las filas que le corresponde iterar a cada hijo es chunk_size / DIM <br>
+Esto es posible ya que la matriz esta ordenada por filas. <br>
 
 ![picture 3](../images/384fa5909d1521982d34d1d5f79315c1313f36edf9f405887bf2abcac5830e90.png)  
 
