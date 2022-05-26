@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 1024; // Tamaño del Vector
+int DIM = 64; // Tamaño del Vector por defecto
 
 float *A; // Vector A la cual sera enviada a los procesos
 float *B; // Vector B Resultado.

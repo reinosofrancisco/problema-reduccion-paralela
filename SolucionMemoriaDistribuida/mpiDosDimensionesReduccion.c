@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 512; // Tamaño de la matriz
+int DIM = 64; // Tamaño de la matriz por defecto
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
