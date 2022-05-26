@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
         {
             for (j = 0; j < DIM; j++)
             {
-                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+                convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
             }
         }
 
