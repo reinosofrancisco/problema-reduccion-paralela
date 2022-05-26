@@ -13,7 +13,7 @@ Modo de compilacion
 
 Uso
 ```
-    mpirun -np NUM_PROCESOS output
+    mpirun -np NUM_PROCESOS output DIM
 ```
 
 ---
