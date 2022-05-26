@@ -55,12 +55,26 @@ int main(int argc, char *argv[])
     int dest, source;
     int offset = 0;
     bool convergencia;
-    bool convergenciaLocal[DIM];
+    bool convergenciaLocal;
 
     /** Init de MPI y obtencion del ID y el Numero de Procesos*/
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &ID);
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
+
+    // Controla los argumentos al programa
+    if ((argc != 2) || ((DIM = atoi(argv[1])) <= 0))
+    {
+        if (ID == 0)
+        {
+            printf("\n Compilar con: mpicc -o archivoCompilado archivoFuente.c");
+            printf("\n Correr con: mpirun -np numThreads archivoCompilado DIM");
+            printf("\n\n numThreads: Numero de threads a usar");
+            printf("\n archivoCompilado: Archivo compilado a ejecutar");
+            printf("\n DIM: Dimension del vector\n");
+        }
+        exit(1);
+    }
 
     /** Numero de Proceos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
@@ -146,8 +160,8 @@ int main(int argc, char *argv[])
             for (int i = 1; i <= slaveTaskCount; i++)
             {
                 source = i;
-                MPI_Recv(&convergenciaLocal[i], 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
-                convergencia = convergencia && convergenciaLocal[i];
+                MPI_Recv(&convergenciaLocal, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
+                convergencia = convergencia && convergenciaLocal;
             }
 
             // Si no converge, el root copia todos los valores de B a A.

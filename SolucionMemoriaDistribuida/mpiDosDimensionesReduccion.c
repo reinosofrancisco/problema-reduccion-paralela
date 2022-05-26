@@ -61,6 +61,20 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &ID);
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
 
+    // Controla los argumentos al programa
+    if ((argc != 2) || ((DIM = atoi(argv[1])) <= 0))
+    {
+        if (ID == 0)
+        {
+            printf("\n Compilar con: mpicc -o archivoCompilado archivoFuente.c");
+            printf("\n Correr con: mpirun -np numThreads archivoCompilado DIM");
+            printf("\n\n numThreads: Numero de threads a usar");
+            printf("\n archivoCompilado: Archivo compilado a ejecutar");
+            printf("\n DIM: Dimension de la matriz (DIM * DIM)\n");
+        }
+        exit(1);
+    }
+
     /** Numero de Proceos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
     /** Pedazo del vector que le corresponde a cada hijo. */
@@ -173,7 +187,6 @@ int main(int argc, char *argv[])
 
                 offset += slaveSize;
             }
-
 
             /** Parte II - Verificacion de Convergencia. */
 
@@ -315,7 +328,6 @@ int main(int argc, char *argv[])
             /** Envio el resultado B con Message Tag = 2. */
             MPI_Send(&B[0], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
-            
             /** Recibo B[0] en un auxiliar para calcular mi propia convergencia. */
             MPI_Recv(&b_cero_root, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
