@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 
         convergencia = true;
 
-        #pragma omp parallel for private(i, j) reduction(&& : convergencia)
+        #pragma omp parallel for private(i, j) reduction(&& : convergencia) 
         for (i = 0; i < DIM; i++)
         {
             for (j = 0; j < DIM; j++)

@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
         /** Parte I - Calculo de Vector Reducido */
         
-        #pragma omp parallel for private(i) shared(A, B)
+        #pragma omp parallel for private(i)
         for (int i = 0; i < DIM; i++)
         {
             if (i == 0)
