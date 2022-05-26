@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 4096; // Tamaño del Vector
+int DIM = 512; // Tamaño del Vector
 
 float *A; // Vector A la cual sera enviada a los procesos
 float *B; // Vector B Resultado.
@@ -79,14 +79,13 @@ int main(int argc, char *argv[])
     /** Pedazo del vector que le corresponde a cada hijo. */
     int slaveSize = DIM / nProcs;
 
+    /** Alocacion de memoria de los vectores*/
+    A = (float *)malloc(sizeof(float) * DIM);
+    B = (float *)malloc(sizeof(float) * DIM);
+
     /** COMPORTAMIENTO PROCESO PADRE */
     if (ID == 0)
     {
-
-        /** Alocacion de memoria de los vectores para el padre */
-        A = (float *)malloc(sizeof(float *) * DIM);
-        B = (float *)malloc(sizeof(float *) * DIM);
-
         /** Relleno el Vector A con valores entre 0 y 1 */
         for (int i = 0; i < DIM; i++)
         {
@@ -100,13 +99,15 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio A a los procesos y calculo */
         do
         {
-            /** Parte I - Reduccion. */
-
-            /** Message Tag 1 para el envio del Vector */
+            /** Message Tag 1 para el envio del Vector y el Offset.
+             * Offset en 1 para saltearme las puntas.
+             */
             offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
-                /* Envio el Vector A desde OFFSET - 1 para incluir puntas*/
+                // Envio el OFFSET del proceso esclavo.
+                MPI_Send(&offset, 1, MPI_INT, dest, 1, MPI_COMM_WORLD);
+                // Envio el Vector desde la posicion (OFFSET - 1) para que pueda calcular el vector reducido.
                 MPI_Send(&A[offset - 1], slaveSize + 2, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
                 // Modifico el Offset salteando por chunks de datos
@@ -127,17 +128,19 @@ int main(int argc, char *argv[])
             }
 
             // el Root espera a que todos los procesos terminen. El message tag es 2
-            offset = slaveSize;
             for (int i = 1; i <= slaveTaskCount; i++)
             {
                 source = i;
-                /** Recibo la parte de B que calculo el Slave. No recibo offset. */
+                /** Recibo el Offset y la parte de C que calculo el proceso esclavo*/
+                MPI_Recv(&offset, 1, MPI_INT, source, 2, MPI_COMM_WORLD, &status);
                 MPI_Recv(&B[offset], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
                 /** Envio B[0] para que cada hilo calcule su propia convergencia. */
                 MPI_Send(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
-                offset += slaveSize;
+                /** Envio las puntas para no enviar todo el vector nuevamente. */
+                // MPI_Send(&B[offset - 1], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+                // MPI_Send(&B[offset + 1], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
             }
 
             /** Verificacion de convergencia */
@@ -180,67 +183,53 @@ int main(int argc, char *argv[])
 
         /* Fin de la medicion de tiempo */
         printf("Tiempo en segundos para convergencia %f manejado por el hijo ID = %d\n", (dwalltime() - timetick), ID);
+
+        // print_vector(B);
     }
 
     /** COMPORTAMIENTO PROCESOS HIJOS */
     if (ID > 0)
     {
-
-        /** Alocacion de memoria de los vectores para los chunks de datos de los hijos.
-         * Esto es, slaveSize + las puntas.
-         * Los datos de los hijos son A[1] hasta A[slaveSize]
-         * Las puntas son A[0] y A[slaveSize + 1]
-         */
-        A = (float *)malloc(sizeof(float *) * (slaveSize + 2));
-        /* En B[0] recibimos el que calculo el Root.
-        En B[1] comienza lo que calcula cada hilo. */
-        B = (float *)malloc(sizeof(float *) * (slaveSize + 1));
-
-        float aux; // Register for multiple accesses to the same variable
-
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
         timetick = dwalltime();
-
         do
         {
-            /** Parte I - Reduccion. */
-
             // El Source sera siempre el root (Master) con ID = 0
             source = 0;
             /** El esclavo espera por el mensaje con tag 1 que envia el root
-             * Recibo entonces el pedazo de A que me corresponde + Las 2 puntas. */
-            MPI_Recv(&A[0], slaveSize + 2, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+             * Recibo el offset, pedazo de A y la totalidad de la Matriz B.*/
+            MPI_Recv(&offset, 1, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
+            MPI_Recv(&A[offset - 1], slaveSize + 2, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
 
-            /** Calculo para mis datos, desde i = 1 hasta SlaveSize inclusive. */
-            for (i = 1; i < slaveSize + 1; i++)
+            for (i = offset; i < offset + slaveSize; i++)
             {
-                /* Si soy el ultimo proceso y estoy en el ultimo dato*/
-                if ((ID == slaveTaskCount) && (i == slaveSize))
+                if (i == DIM - 1)
                 {
                     B[i] = ((A[i - 1] + A[i]) * (0.5));
                 }
-                /* Comportamiento normal. */
                 else
                 {
                     B[i] = (A[i - 1] + A[i] + A[i + 1]) * (0.333333);
                 }
             }
 
-            /** Envio el resultado B con Message Tag = 2.
-             * Recordar que lo calculado esta exceptuando las puntas desde B[1]. */
-            MPI_Send(&B[1], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+            /** Envio el Offset y Resultado B con Message Tag = 2*/
+            MPI_Send(&offset, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+            MPI_Send(&B[offset], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
-            /** Recibo B[0] para calcular mi propia convergencia.*/
-            MPI_Recv(&aux, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
+            /** Recibo B[0] para calcular mi propia convergencia. */
+            MPI_Recv(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
-            /** Parte II - Verificacion de Convergencia. */
+            /** Recibo las puntas para no tener que recibir todo el vector nuevamente. */
+            // MPI_Recv(&B[offset - 1], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
+            // MPI_Recv(&B[offset + 1], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
+            // Verifico mi propia convergencia
             convergencia = true;
-
-            for (i = 1; i < slaveSize + 1; i++)
+            for (i = offset; i < offset + slaveSize; i++)
             {
-                convergencia = convergencia && (fabs(aux - B[i]) < PRESICION);
+                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
             }
 
             // Envio mi convergencia como proceso Hijo para que el Padre compare con las demas.
@@ -254,7 +243,7 @@ int main(int argc, char *argv[])
         } while (!convergencia);
 
         /* Fin de la medicion de tiempo */
-        printf("Tiempo en segundos para convergencia %f para el hijo ID = %d\n", (dwalltime() - timetick), ID);
+        printf("Tiempo en segundos para convergencia %f para el hijo ID = %d\n", (dwalltime() - timetick),ID);
     }
 
     free(A);
