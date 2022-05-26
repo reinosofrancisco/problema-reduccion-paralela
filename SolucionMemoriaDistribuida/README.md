@@ -40,6 +40,12 @@ No obstante, la matriz B auxiliar permanece de size chunk_size sin tener estas f
 
 Entonces, el proceso hijo ve 2 matrices de size chunk_size y de size chunk_size + (2 * DIM). <br>
 
+Para acceder a la parte que tiene que calcular de A debe iterar desde i = 1, ya que i = 0 corresponde a la fila extra. <br>
+En otras palabras, la parte que le corresponde a un hilo hijo para la matriz A va desde i = 1 hasta i = (chunk_size / DIM) + 1. <br>
+La parte que le corresponde de B es simplemente de i = 0 hasta i = (chunk_size / DIM). <br>
+Por ende, el calculo del dato que guardamos en `B[i * DIM + j]` corresponde a `A[(i + 1) * DIM + j]`. <br>
+Por simplicidad a la hora de iterar, cambiamos esta relacion y comenzamos desde i = 1, para que sea `B[(i - 1) * DIM + j]` correspondiente a `A[i * DIM + j]`. <br>
+
 ![picture 4](../images/f9c38c77e3298e2a3ad6ab1234b26e6825a58f6166c1052812c529204fb964c1.png)  
 
 
