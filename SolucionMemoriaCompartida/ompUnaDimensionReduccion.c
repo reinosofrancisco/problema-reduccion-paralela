@@ -64,6 +64,8 @@ int main(int argc, char *argv[])
 
     init_vector_ceros_y_unos(A);
 
+    printf("Vector Original de size %d\n", DIM);
+
     bool convergencia;
     omp_set_num_threads(numThreads);
 

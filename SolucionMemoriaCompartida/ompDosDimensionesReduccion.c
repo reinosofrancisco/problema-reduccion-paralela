@@ -73,6 +73,8 @@ int main(int argc, char *argv[])
 
     init_matrix_ceros_y_unos_filas(A);
 
+    printf("Matriz Original de size %dx%d\n", DIM, DIM);
+
     /* Seteo el Numero de Threads a utilizar. */
     omp_set_num_threads(numThreads);
 
@@ -158,12 +160,12 @@ int main(int argc, char *argv[])
 
         convergencia = true;
 
-        #pragma omp parallel for reduction(&& : convergencia)
+        #pragma omp parallel for private(i, j) reduction(&& : convergencia)
         for (i = 0; i < DIM; i++)
         {
             for (j = 0; j < DIM; j++)
             {
-                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+                convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
             }
         } // Barrera implicita de OMP
 
