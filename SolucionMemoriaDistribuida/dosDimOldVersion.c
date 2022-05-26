@@ -18,7 +18,7 @@ MPI_Status status;
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
-int DIM = 16; // Tamaño de la matriz
+int DIM = 64; // Tamaño de la matriz
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
@@ -119,8 +119,8 @@ int main(int argc, char *argv[])
             }
         }
 
-        printf("Matriz Original\n");
-        print_matrix_f(A);
+        printf("Matriz Original de %dx%d\n", DIM, DIM);
+        // print_matrix_f(A);
 
         /* Inicio de la medicion de tiempo */
         double timetick;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
             /** Parte I - Reduccion. */
 
             // print_matrix_f(A);
-            usleep(100000);
+            // usleep(100000);
 
             /** Message Tag 1 para el envio del Vector */
             offset = slaveSize;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
             }
 
             /** El Root calcula el primer chunk de datos */
-            for (i = 0; i < slaveSize / DIM ; i++)
+            for (i = 0; i < slaveSize / DIM; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
             convergencia = true;
 
             // El Root verifica la convergencia del primer chunk de datos.
-            for (i = 0; i < slaveSize / DIM; i++)
+            for (i = 0; i < (slaveSize / DIM); i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
         } while (!convergencia);
 
         /* Fin de la medicion de tiempo */
-        printf("Tiempo en segundos para convergencia %f manejado por el hijo ID = %d\n", (dwalltime() - timetick), ID);
+        printf("Tiempo en segundos para convergencia %f para el root ID = %d\n", (dwalltime() - timetick), ID);
     }
 
     /** COMPORTAMIENTO PROCESOS HIJOS */
@@ -292,19 +292,19 @@ int main(int argc, char *argv[])
              * Recibo entonces el pedazo de A que me corresponde + Las 2 puntas. */
             MPI_Recv(&A[0], slaveSize + (2 * DIM), MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
 
-            if (ID = 1)
-            {
-                for (i = 1; i < (slaveSize/DIM) + 1; i++)
-                {
-                    printf("\n\t| ");
-                    for (j = 0; j < DIM; j++)
-                    {
-                        printf("%2f ", A[i * DIM + j]);
-                    }
-                    printf("|");
-                }
-                printf("\n");
-            }
+            // if (ID == 1)
+            // {
+            //     for (i = 1; i < (slaveSize/DIM) + 1; i++)
+            //     {
+            //         printf("\n\t| ");
+            //         for (j = 0; j < DIM; j++)
+            //         {
+            //             printf("%2f ", A[i * DIM + j]);
+            //         }
+            //         printf("|");
+            //     }
+            //     printf("\n");
+            // }
 
             /** Calculo para mis datos, desde i = 1 hasta slaveSize + DIM - 1. */
             for (i = 1; i < (slaveSize / DIM) + 1; i++)
@@ -319,7 +319,6 @@ int main(int argc, char *argv[])
                         {
                             // Primer cubito Ultima fila
                             B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) * (0.25);
-                            printf("B[i * DIM + j] = %f\n", B[i * DIM + j]);
                         }
                         else if (j == DIM - 1)
                         {
