@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
         convergencia = true;
 
-        #pragma omp parallel for reduction(&& : convergencia)
+        #pragma omp parallel for private(i) reduction(&& : convergencia)
         for (i = 0; i < DIM; i++)
         {
             convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
