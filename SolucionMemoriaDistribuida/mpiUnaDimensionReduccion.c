@@ -8,7 +8,6 @@
 
 #define PRESICION 0.01
 
-
 /** ***************************************************************************
  ****** Variables Globales al Programa pero Locales a la Maquina Actual. ******
  * *************************************************************************** */
@@ -153,16 +152,10 @@ int main(int argc, char *argv[])
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < slaveSize; i++)
             {
-                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+                convergenciaLocal = convergenciaLocal && (fabs(B[0] - B[i]) < PRESICION);
             }
 
-            // El root recibe la respuesta de los procesos esclavos
-            for (int i = 1; i <= slaveTaskCount; i++)
-            {
-                source = i;
-                MPI_Recv(&convergenciaLocal, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
-                convergencia = convergencia && convergenciaLocal;
-            }
+            MPI_Reduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
 
             // Si no converge, el root copia todos los valores de B a A.
             if (!convergencia)
@@ -243,11 +236,10 @@ int main(int argc, char *argv[])
 
             for (i = 0; i < slaveSize; i++)
             {
-                convergencia = convergencia && (fabs(b_cero_root - B[i]) < PRESICION);
+                convergenciaLocal = convergenciaLocal && (fabs(b_cero_root - B[i]) < PRESICION);
             }
 
-            // Envio mi convergencia como proceso Hijo para que el Padre compare con las demas.
-            MPI_Send(&convergencia, 1, MPI_INT, source, 3, MPI_COMM_WORLD);
+            MPI_Reduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
 
             /** Mensaje para verificar convergencia con Message Tag = 3.
              * Recibo del padre si todos los procesos convergen. Caso contrario, vuelvo a calcular. */
