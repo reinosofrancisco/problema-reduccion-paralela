@@ -7,10 +7,6 @@
 
 #define PRESICION 0.01
 
-#define true 1
-#define false 0
-#define bool int
-
 // Default Vector Size
 int DIM = 1024;
 float *A, *B;
@@ -65,7 +61,7 @@ int main(int argc, char *argv[])
 
     init_vector_ceros_y_unos(A);
 
-    bool convergencia;
+    int convergencia;
 
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
@@ -92,7 +88,7 @@ int main(int argc, char *argv[])
 
         /** Parte II - Verificacion de Convergencia. */
 
-        convergencia = true;
+        convergencia = 1;
 
         for (i = 0; i < DIM; i++)
         {

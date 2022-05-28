@@ -8,9 +8,6 @@
 
 #define PRESICION 0.01
 
-#define true 1
-#define false 0
-#define bool int
 
 // Default Vector Size
 int DIM = 2048;
@@ -69,7 +66,7 @@ int main(int argc, char *argv[])
 
     printf("Vector Original de size %d\n", DIM);
 
-    bool convergencia;
+    int convergencia;
     omp_set_num_threads(numThreads);
 
     /* Inicio de la medicion de tiempo */
@@ -100,7 +97,7 @@ int main(int argc, char *argv[])
 
         /** Parte II - Verificacion de Convergencia. */
 
-        convergencia = true;
+        convergencia = 1;
 
         #pragma omp parallel for private(i) reduction(&& : convergencia)
         for (i = 0; i < DIM; i++)

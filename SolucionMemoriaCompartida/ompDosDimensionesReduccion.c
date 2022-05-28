@@ -8,10 +8,6 @@
 
 #define PRESICION 0.01
 
-#define true 1
-#define false 0
-#define bool int
-
 // Default Matrix Size
 int DIM = 1024;
 float *A, *B;
@@ -60,7 +56,7 @@ int main(int argc, char *argv[])
     double timetick;
     int numThreads = 4;
     int i, j;
-    bool convergencia;
+    int convergencia;
     register float aux; // Register for multiple accesses to the same variable
 
     // Controla los argumentos al programa
@@ -161,7 +157,7 @@ int main(int argc, char *argv[])
 
         /** Parte II - Verificacion de Convergencia. */
 
-        convergencia = true;
+        convergencia = 1;
 
         #pragma omp parallel for private(i, j) reduction(&& : convergencia) 
         for (i = 0; i < DIM; i++)

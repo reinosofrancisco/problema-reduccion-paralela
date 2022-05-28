@@ -7,9 +7,6 @@
 
 #define PRESICION 0.01
 
-#define true 1
-#define false 0
-#define bool int
 
 // Default Matrix Size
 int DIM = 8;
@@ -62,7 +59,7 @@ int main(int argc, char *argv[])
     // Variable auxiliares
     double timetick;
     int i, j;
-    bool convergencia;
+    int convergencia;
     register float aux; // Register for multiple accesses to the same variable
 
     /* Alocacion de memoria para Matriz N*N cuadrada */
@@ -149,7 +146,7 @@ int main(int argc, char *argv[])
 
         /** Parte II - Verificacion de Convergencia. */
 
-        convergencia = true;
+        convergencia = 1;
 
         for (i = 0; i < DIM; i++)
         {

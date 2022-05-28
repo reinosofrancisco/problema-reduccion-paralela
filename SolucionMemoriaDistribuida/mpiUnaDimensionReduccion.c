@@ -8,9 +8,6 @@
 
 #define PRESICION 0.01
 
-#define true 1
-#define false 0
-#define bool int
 
 /** ***************************************************************************
  ****** Variables Globales al Programa pero Locales a la Maquina Actual. ******
@@ -57,8 +54,8 @@ int main(int argc, char *argv[])
     int i, j, k;
     int dest, source;
     int offset = 0;
-    bool convergencia;
-    bool convergenciaLocal;
+    int convergencia;
+    int convergenciaLocal;
 
     /** Init de MPI y obtencion del ID y el Numero de Procesos*/
     MPI_Init(&argc, &argv);
@@ -151,7 +148,7 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = true;
+            convergencia = 1;
 
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < slaveSize; i++)
@@ -242,7 +239,7 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = true;
+            convergencia = 1;
 
             for (i = 0; i < slaveSize; i++)
             {

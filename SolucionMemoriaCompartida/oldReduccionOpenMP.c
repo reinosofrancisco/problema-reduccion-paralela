@@ -8,10 +8,6 @@
 
 #define PRESICION 0.01
 
-#define true 1
-#define false 0
-#define bool int
-
 // Default Matrix Size
 int DIM = 512;
 float *A, *B;
@@ -66,7 +62,7 @@ int main(int argc, char *argv[])
     int numThreads;
     double timetick;
     int i, j;
-    bool convergencia;
+    int convergencia;
     register float aux; // Register for multiple accesses to the same variable
 
     // Controla los argumentos al programa
@@ -179,7 +175,7 @@ int main(int argc, char *argv[])
 
         /** Parte II - Verificacion de Convergencia. */
 
-        convergencia = true;
+        convergencia = 1;
 
         /* No puedo paralelizar la verificacion a menos que tenga un vector[DIM]
         de booleanos, y guarde dada true/false, para luego recorrerlo y verificar
