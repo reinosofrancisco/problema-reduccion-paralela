@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
     /** Pedazo del vector que le corresponde a cada hijo. */
     slaveSize = (DIM * DIM) / nProcs;
 
-    bool convergencia;
-    bool convergenciaLocal;
+    int convergencia;
+    int convergenciaLocal;
 
     int offset = 0;
     register float aux; // Register for multiple accesses to the same variable
@@ -189,26 +189,18 @@ int main(int argc, char *argv[])
             }
 
             /** Parte II - Verificacion de Convergencia. */
-
-            convergencia = true;
-
+            convergenciaLocal = 1;
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < (slaveSize / DIM); i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
+                    convergenciaLocal = convergenciaLocal && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
                 }
             }
 
-            // El root recibe la respuesta de los procesos esclavos
-            for (int i = 1; i <= slaveTaskCount; i++)
-            {
-                source = i;
-                MPI_Recv(&convergenciaLocal, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
-                // printf("Proceso %d tiene convergencia: %d\n", source, convergenciaLocal);
-                convergencia = convergencia && convergenciaLocal;
-            }
+            MPI_Reduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
+
 
             // Si no converge, el root copia todos los valores de B a A.
             if (!convergencia)
@@ -333,18 +325,18 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = true;
+            convergenciaLocal = 1;
 
             for (i = 0; i < (slaveSize / DIM); i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    convergencia = convergencia && (fabs(b_cero_root - B[i * DIM + j]) < PRESICION);
+                    convergenciaLocal = convergenciaLocal && (fabs(b_cero_root - B[i * DIM + j]) < PRESICION);
                 }
             }
 
-            // Envio mi convergencia como proceso Hijo para que el Padre compare con las demas.
-            MPI_Send(&convergencia, 1, MPI_INT, source, 3, MPI_COMM_WORLD);
+            
+            MPI_Reduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
 
             /** Mensaje para verificar convergencia con Message Tag = 3.
              * Recibo del padre si todos los procesos convergen. Caso contrario, vuelvo a calcular. */
