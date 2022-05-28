@@ -5,9 +5,10 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <mpi.h>
-#include <stdbool.h>
 
 #define PRESICION 0.01
+#define TRUE 1
+#define FALSE 0
 
 /** ***************************************************************************
  ****** Variables Globales al Programa pero Locales a la Maquina Actual. ******
@@ -189,7 +190,7 @@ int main(int argc, char *argv[])
             }
 
             /** Parte II - Verificacion de Convergencia. */
-            convergenciaLocal = 1;
+            convergenciaLocal = TRUE;
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < (slaveSize / DIM); i++)
             {
@@ -325,7 +326,7 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergenciaLocal = 1;
+            convergenciaLocal = TRUE;
 
             for (i = 0; i < (slaveSize / DIM); i++)
             {
