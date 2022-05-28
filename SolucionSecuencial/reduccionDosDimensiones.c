@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <math.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -7,6 +6,10 @@
 #include <limits.h>
 
 #define PRESICION 0.01
+
+#define true 1
+#define false 0
+#define bool int
 
 // Default Matrix Size
 int DIM = 8;
