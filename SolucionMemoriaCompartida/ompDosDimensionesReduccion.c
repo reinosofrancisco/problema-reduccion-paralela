@@ -7,6 +7,8 @@
 #include <omp.h>
 
 #define PRESICION 0.01
+#define TRUE 1
+#define FALSE 0
 
 // Default Matrix Size
 int DIM = 1024;
@@ -82,105 +84,110 @@ int main(int argc, char *argv[])
 
     do
     {
-
-        /** Parte I - Calculo de Vector Reducido*/
-
-        /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
-        #pragma omp parallel for private(i, j, aux)
-        for (i = 0; i < DIM; i++)
+        #pragma omp parallel 
         {
-            for (j = 0; j < DIM; j++)
-            {
-                if (i == 0 && j == 0)
-                {
-                    // Primer cubito Primer fila
-                    B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) * (0.25);
-                }
-                else if (i == 0 && j == DIM - 1)
-                {
-                    // Ultimo cubito Primer fila
-                    B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
-                }
-                else if (i == DIM - 1 && j == 0)
-                {
-                    // Primer cubito Ultima fila
-                    B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) * (0.25);
-                }
-                else if (i == DIM - 1 && j == DIM - 1)
-                {
-                    // Ultimo cubito Ultima fila
-                    B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
-                }
-                else if (i == 0)
-                {
-                    // Primer fila sin puntas
-                    aux = 0;
-                    aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                    aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                    B[i * DIM + j] = (aux * 0.166666);
-                }
-                else if (i == DIM - 1)
-                {
-                    // Ultima fila sin puntas
-                    aux = 0;
-                    aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                    aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                    B[i * DIM + j] = (aux * 0.166666);
-                }
-                else if (j == 0)
-                {
-                    // Primera columna sin puntas
-                    aux = 0;
-                    aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                    aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
-                    B[i * DIM + j] = (aux * 0.166666);
-                }
-                else if (j == DIM - 1)
-                {
-                    // Ultima columna sin puntas
-                    aux = 0;
-                    aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                    aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
-                    B[i * DIM + j] = (aux * 0.166666);
-                }
-                else
-                {
-                    // Caso comun
-                    aux = 0;
-                    aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                    aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                    aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
-                    B[i * DIM + j] = (aux * 0.111111);
-                };
-            }
-        } // Barrera implicita de OMP
 
-        /** Parte II - Verificacion de Convergencia. */
+            /** Parte I - Calculo de Vector Reducido*/
 
-        convergencia = 1;
-
-        #pragma omp parallel for private(i, j) reduction(&& : convergencia) 
-        for (i = 0; i < DIM; i++)
-        {
-            for (j = 0; j < DIM; j++)
-            {
-                convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
-            }
-        } // Barrera implicita de OMP
-
-        if (!convergencia)
-        {
-            // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
-            #pragma omp parallel for private(i, j)
+            /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
+            #pragma omp for private(i, j, aux)
             for (i = 0; i < DIM; i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
-                    A[i * DIM + j] = B[i * DIM + j];
+                    if (i == 0 && j == 0)
+                    {
+                        // Primer cubito Primer fila
+                        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) * (0.25);
+                    }
+                    else if (i == 0 && j == DIM - 1)
+                    {
+                        // Ultimo cubito Primer fila
+                        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
+                    }
+                    else if (i == DIM - 1 && j == 0)
+                    {
+                        // Primer cubito Ultima fila
+                        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)]) * (0.25);
+                    }
+                    else if (i == DIM - 1 && j == DIM - 1)
+                    {
+                        // Ultimo cubito Ultima fila
+                        B[i * DIM + j] = (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)]) * (0.25);
+                    }
+                    else if (i == 0)
+                    {
+                        // Primer fila sin puntas
+                        aux = 0;
+                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
+                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
+                        B[i * DIM + j] = (aux * 0.166666);
+                    }
+                    else if (i == DIM - 1)
+                    {
+                        // Ultima fila sin puntas
+                        aux = 0;
+                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
+                        aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
+                        B[i * DIM + j] = (aux * 0.166666);
+                    }
+                    else if (j == 0)
+                    {
+                        // Primera columna sin puntas
+                        aux = 0;
+                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
+                        aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
+                        B[i * DIM + j] = (aux * 0.166666);
+                    }
+                    else if (j == DIM - 1)
+                    {
+                        // Ultima columna sin puntas
+                        aux = 0;
+                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
+                        aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
+                        B[i * DIM + j] = (aux * 0.166666);
+                    }
+                    else
+                    {
+                        // Caso comun
+                        aux = 0;
+                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
+                        aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
+                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
+                        B[i * DIM + j] = (aux * 0.111111);
+                    };
+                }
+            }
+
+            // Se deben esperar despues del for porque todos necesitan el valor de B[0]
+            #pragma omp barrier
+
+            /** Parte II - Verificacion de Convergencia. */
+
+            convergencia = TRUE;
+
+            #pragma omp for private(i, j) reduction(&& : convergencia) 
+            for (i = 0; i < DIM; i++)
+            {
+                for (j = 0; j < DIM; j++)
+                {
+                    convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
+                }
+            }
+
+            if (!convergencia)
+            {
+                // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
+                #pragma omp parallel for private(i, j)
+                for (i = 0; i < DIM; i++)
+                {
+                    for (j = 0; j < DIM; j++)
+                    {
+                        A[i * DIM + j] = B[i * DIM + j];
+                    }
                 }
             }
         }
-        
     } while (!convergencia);
 
     /* Fin de la medicion de tiempo */
