@@ -5,9 +5,12 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <mpi.h>
-#include <stdbool.h>
 
 #define PRESICION 0.01
+
+#define true 1
+#define false 0
+#define bool int
 
 /** ***************************************************************************
  ****** Variables Globales al Programa pero Locales a la Maquina Actual. ******
