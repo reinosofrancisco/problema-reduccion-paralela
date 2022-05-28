@@ -7,8 +7,6 @@
 #include <omp.h>
 
 #define PRESICION 0.01
-#define TRUE 1
-#define FALSE 0
 
 // Default Matrix Size
 int DIM = 1024;
@@ -164,7 +162,7 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = TRUE;
+            convergencia = 1;
 
             #pragma omp for private(i, j) reduction(&& : convergencia) 
             for (i = 0; i < DIM; i++)
