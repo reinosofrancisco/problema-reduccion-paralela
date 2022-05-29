@@ -106,15 +106,19 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio las puntas de los chunks a los procesos y calculo */
         do
         {
-            MPI_Request request;
-            /** Parte I - Reduccion. */
 
-            /** Message Tag 1 para el envio de las filas extra de la matriz */
-            MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+            if (nProcs > 1) {
+                MPI_Request request;
+                /** Parte I - Reduccion. */
 
-            MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+                /** Message Tag 1 para el envio de las filas extra de la matriz */
+                MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-            MPI_Wait(&request, &status);
+                MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+
+                MPI_Wait(&request, &status);
+            }
+            
            
             /* El Root calcula el primer chunk de datos */
             for (i = 0; i < slaveSize; i++)
