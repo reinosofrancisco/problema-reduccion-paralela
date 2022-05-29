@@ -116,23 +116,16 @@ int main(int argc, char *argv[])
         {
             /** Parte I - Reduccion. */
 
-            /** Message Tag 1 para el envio de las filas extra de la matriz */
-            offset = slaveSize;
-            for (dest = 1; dest <= slaveTaskCount; dest++)
-            {
-                // Envio la ultima fila del hilo (i - 1) , al hilo (i)
-                MPI_Send(&A[offset - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+            if (nProcs > 1) {
+                /** Message Tag 1 para el envio de las filas extra de la matriz.
+                * Envio la ultima fila del root al (ID + 1)
+                */
+                MPI_Isend(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-                // El ultimo hijo no necesita la primer fila del hilo (i + 1)
-                if (dest != slaveTaskCount)
-                {
-                    // Envio la primer fila del hilo (i + 1) , al hilo i
-                    MPI_Send(&A[offset + slaveSize - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
-                }
-
-                // Modifico el Offset salteando por chunks de datos
-                offset += slaveSize;
-            }
+                /* Recibo la primer fila del hilo (ID == 1) en el root (ID == 0)*/
+                MPI_Irecv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+                MPI_Wait(&request, &status);               
+            }    
 
             // El Root calcula el primer chunk de datos
             for (i = 0; i < slaveSize / DIM; i++)

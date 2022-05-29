@@ -106,26 +106,18 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio las puntas de los chunks a los procesos y calculo */
         do
         {
-            /** Parte I - Reduccion. */
+            if (nProcs > 1) {
+                MPI_Request request;
 
-            /** Message Tag 1 para el envio las puntas del vector */
-            offset = slaveSize;
-            for (dest = 1; dest <= slaveTaskCount; dest++)
-            {
-                // Envio la ultima punta del hilo (i - 1) al hilo (i)
-                MPI_Send(&A[offset - 1], 1, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+                /** Message Tag 1 para el envio de las filas extra de la matriz */
+                MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-                // El ultimo hijo no necesita la primer fila del hilo (i + 1)
-                if (dest != slaveTaskCount)
-                {
-                    /* Envio la primer punta del hilo (i + 1), al hilo (i). */
-                    MPI_Send(&A[offset + slaveSize - 1], 1, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
-                }
+                MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-                // Modifico el Offset salteando por chunks de datos
-                offset += slaveSize;
+                MPI_Wait(&request, &status);
             }
-
+            
+           
             /* El Root calcula el primer chunk de datos */
             for (i = 0; i < slaveSize; i++)
             {
