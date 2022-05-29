@@ -92,6 +92,8 @@ int main(int argc, char *argv[])
         /** Alocacion de memoria de la matriz para el padre */
         A = (float *)malloc(sizeof(float) * DIM * DIM);
         B = (float *)malloc(sizeof(float) * DIM * DIM);
+
+        /** Matriz temporal de ChunkSize + 1 fila extra para el root. */
         float *Aroot  = (float *)malloc(sizeof(float) * (slaveSize +  DIM));
 
         /** Relleno el Vector A con valores entre 0 y 1 */
@@ -254,8 +256,10 @@ int main(int argc, char *argv[])
          * La primer fila es A[0] hasta A[DIM - 1]
          * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]
          */
-        int size = ID == slaveTaskCount ? 1 : 2;
+        int size = (ID == slaveTaskCount ? 1 : 2);
+
         A = (float *)malloc(sizeof(float) * (slaveSize + (size * DIM)));
+        
         /* en B[0] comienza lo que calcula cada hilo para B. */
         B = (float *)malloc(sizeof(float) * (slaveSize));
 
