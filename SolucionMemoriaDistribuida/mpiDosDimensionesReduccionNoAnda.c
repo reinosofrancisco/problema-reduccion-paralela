@@ -100,6 +100,9 @@ int main(int argc, char *argv[])
 
         printf("Matriz Original de size %dx%d\n", DIM, DIM);
 
+        /* Variables auxiliares */
+        MPI_Request request;
+
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
@@ -110,14 +113,15 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio las filas superior e inferior y calculo. */
         do
         {
-            MPI_Request request;
             /** Parte I - Reduccion. */
 
-            /** Message Tag 1 para el envio de las filas extra de la matriz */
+            /** Message Tag 1 para el envio de las filas extra de la matriz.
+             * Envio la ultima fila del root al (ID + 1)
+            */
             MPI_Isend(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
+            /* Recibo la primer fila del hilo (ID == 1) en el root (ID == 0)*/
             MPI_Irecv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
-
             MPI_Wait(&request, &status);
            
 
@@ -207,6 +211,7 @@ int main(int argc, char *argv[])
 
         /* Fin de la medicion de tiempo del padre*/
         printf("Tiempo en segundos para convergencia %f para el root ID = %d\n", (dwalltime() - timetick), ID);
+
     }
 
     /** COMPORTAMIENTO PROCESOS HIJOS */
@@ -229,6 +234,7 @@ int main(int argc, char *argv[])
 
         /* Variables auxiliares */
         float b_cero_root;
+        MPI_Request request;
 
         /* Recibo con un Scatter el chunk que debo calcular sin las filas extra.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -237,21 +243,22 @@ int main(int argc, char *argv[])
         {
             /** Parte I - Reduccion. */
 
-            MPI_Request request;
-
+            /* Envio la primer fila del hilo (ID) al hilo (ID - 1) */
             MPI_Isend(&A[DIM], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
             
             if (ID != slaveTaskCount) {
+                /* Envio la ultima fila del hilo (ID) al hilo (ID + 1) */
                 MPI_Isend(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
             }
 
-            /** Recibo las filas extra en A[0] y A[DIM + slaveSize]. */
+            /* Recibo la ultima fila del hilo (ID - 1) en el hilo (ID) */
             MPI_Irecv(&A[0], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
             MPI_Wait(&request, &status);
 
             /** Solo recibo la ultima fila si NO soy el ultimo hilo. */
             if (ID != slaveTaskCount)
             {
+                /* Recibo la primer fila del hilo (ID + 1) en el hilo (ID) */
                 MPI_Irecv(&A[DIM + slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
                 MPI_Wait(&request, &status);
             }
