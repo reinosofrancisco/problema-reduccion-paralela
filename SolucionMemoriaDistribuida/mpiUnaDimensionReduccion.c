@@ -129,25 +129,16 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // el Root espera a que todos los procesos terminen. El message tag es 2
-            offset = slaveSize;
             for (int i = 1; i <= slaveTaskCount; i++)
             {
-                source = i;
-                /** Recibo la parte de B que calculo el Slave. No recibo offset. */
-                MPI_Recv(&B[offset], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
-
-                /** Envio B[0] para que cada hilo calcule su propia convergencia. */
-                MPI_Send(&B[0], 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
-
-                offset += slaveSize;
+                MPI_Send(&B[0], 1, MPI_FLOAT, i, 2, MPI_COMM_WORLD);
             }
 
             /** Verificacion de convergencia */
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = 1;
+            convergenciaLocal = 1;
 
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < slaveSize; i++)
@@ -155,23 +146,26 @@ int main(int argc, char *argv[])
                 convergenciaLocal = convergenciaLocal && (fabs(B[0] - B[i]) < PRESICION);
             }
 
-            MPI_Reduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
+            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
             // Si no converge, el root copia todos los valores de B a A.
             if (!convergencia)
             {
                 // Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
-                for (int i = 0; i < DIM; i++)
+                for (int i = 0; i < DIM / nProcs; i++)
                 {
                     A[i] = B[i];
                 }
             }
 
-            for (dest = 1; dest <= slaveTaskCount; dest++)
-            {
-                // Envio el valor de Convergencia a todos los hijos para que sepan si seguir o no reduciendo.
-                MPI_Send(&convergencia, 1, MPI_INT, dest, 3, MPI_COMM_WORLD);
+            for (i = 1; i < nProcs; i++) {
+                if (convergencia) {
+                    MPI_Recv(&B[i * (DIM/nProcs)], DIM/nProcs, MPI_FLOAT, i, 2, MPI_COMM_WORLD, &status);
+                } else {
+                    MPI_Recv(&A[i * (DIM/nProcs)], DIM/nProcs, MPI_FLOAT, i, 2, MPI_COMM_WORLD, &status);
+                }
             }
+
 
         } while (!convergencia);
 
@@ -224,26 +218,22 @@ int main(int argc, char *argv[])
                 }
             }
 
-            /** Envio el resultado B con Message Tag = 2. */
-            MPI_Send(&B[0], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
-
             /** Recibo B[0] en una variable auxiliar para calcular mi propia convergencia.*/
             MPI_Recv(&b_cero_root, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = 1;
+            convergenciaLocal = 1;
 
             for (i = 0; i < slaveSize; i++)
             {
                 convergenciaLocal = convergenciaLocal && (fabs(b_cero_root - B[i]) < PRESICION);
             }
+            
+            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
-            MPI_Reduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
-
-            /** Mensaje para verificar convergencia con Message Tag = 3.
-             * Recibo del padre si todos los procesos convergen. Caso contrario, vuelvo a calcular. */
-            MPI_Recv(&convergencia, 1, MPI_INT, source, 3, MPI_COMM_WORLD, &status);
+            /** Envio el resultado B con Message Tag = 2. */
+            MPI_Send(&B[0], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
 
         } while (!convergencia);
 

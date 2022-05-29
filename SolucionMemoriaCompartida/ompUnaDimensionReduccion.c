@@ -13,7 +13,6 @@
 int DIM = 2048;
 float *A, *B;
 
-
 /***************************************************************************/
 /*                       Funciones Auxiliares                              */
 /***************************************************************************/
@@ -77,43 +76,52 @@ int main(int argc, char *argv[])
         int i;
 
         /** Parte I - Calculo de Vector Reducido */
-        
-        #pragma omp parallel for private(i)
-        for (int i = 0; i < DIM; i++)
+        #pragma omp parallel 
         {
-            if (i == 0)
-            {
-                B[i] = (A[i] + A[i + 1]) * 0.5;
-            }
-            else if (i == DIM - 1)
-            {
-                B[i] = (A[i - 1] + A[i]) * 0.5;
-            }
-            else
-            {
-                B[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
-            }
-        }
 
-        /** Parte II - Verificacion de Convergencia. */
-
-        convergencia = 1;
-
-        #pragma omp parallel for private(i) reduction(&& : convergencia)
-        for (i = 0; i < DIM; i++)
-        {
-            convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
-        }
-
-        if (!convergencia)
-        {
-            //  Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
+            #pragma omp for private(i)
             for (int i = 0; i < DIM; i++)
             {
-                A[i] = B[i];
+                if (i == 0)
+                {
+                    B[i] = (A[i] + A[i + 1]) * 0.5;
+                }
+                else if (i == DIM - 1)
+                {
+                    B[i] = (A[i - 1] + A[i]) * 0.5;
+                }
+                else
+                {
+                    B[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
+                }
             }
-        }
 
+            // Se deben esperar despues del for porque todos necesitan el valor de B[0]
+            #pragma omp barrier
+
+            /** Parte II - Verificacion de Convergencia. */
+
+            convergencia = 1;
+
+            #pragma omp for private(i) reduction(&& : convergencia)
+            for (i = 0; i < DIM; i++)
+            {
+                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+            }
+
+            if (!convergencia)
+            {
+                //  Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
+                #pragma omp for
+                for (int i = 0; i < DIM; i++)
+                {
+                    A[i] = B[i];
+                }
+            }
+
+        }
+        
+       
     } while (!convergencia);
 
     /* Fin de la medicion de tiempo */

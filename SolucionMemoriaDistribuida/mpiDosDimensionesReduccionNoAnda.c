@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
         /** Alocacion de memoria de la matriz para el padre */
         A = (float *)malloc(sizeof(float) * DIM * DIM);
         B = (float *)malloc(sizeof(float) * DIM * DIM);
+        float *Aroot  = (float *)malloc(sizeof(float) * (slaveSize +  DIM));
 
         /** Relleno el Vector A con valores entre 0 y 1 */
         for (int i = 0; i < DIM; i++)
@@ -100,25 +101,42 @@ int main(int argc, char *argv[])
             {
                 A[i * DIM + j] = rand() / (float)RAND_MAX;
             }
+
         }
+
 
         printf("Matriz Original de size %dx%d\n", DIM, DIM);
 
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
+        
+        //Dejo libre la fila 0
+        MPI_Scatter(A, slaveSize, MPI_FLOAT, Aroot, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
 
         /** Mientras B no converga, envio A a los procesos y calculo */
         do
         {
             /** Parte I - Reduccion. */
 
+            //Agarro la ultima fila que necesita el master para calcular su parte
+            for (j = 0; j < DIM; j++) {
+                Aroot[slaveSize * DIM + j] = Aroot[slaveSize * DIM + j];
+            }
+
             /** Message Tag 1 para el envio del Vector */
             offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
                 /* Envio el Vector A desde OFFSET - DIM para incluir las filas externas. */
-                MPI_Send(&A[offset - DIM], slaveSize + (2 * DIM), MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+                MPI_Send(&A[offset - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+
+                // El ultimo no necesita la ultima fila
+                if (dest != slaveTaskCount) {
+                     MPI_Send(&A[offset + slaveSize - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+                }
+               
 
                 // Modifico el Offset salteando por chunks de datos
                 offset += slaveSize;
@@ -131,53 +149,53 @@ int main(int argc, char *argv[])
                 {
                     if (i == 0 && j == 0)
                         // Primer cubito Primer fila
-                        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]) * (0.25);
+                        B[i * DIM + j] = (Aroot[i * DIM + j] + Aroot[(i + 1) * DIM + j] + Aroot[i * DIM + (j + 1)] + Aroot[(i + 1) * DIM + (j + 1)]) * (0.25);
                     else if (i == 0 && j == DIM - 1)
                     {
                         // Ultimo cubito Primer fila
-                        B[i * DIM + j] = (A[i * DIM + j] + A[(i + 1) * DIM + j] + A[i * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]) * (0.25);
+                        B[i * DIM + j] = (Aroot[i * DIM + j] + Aroot[(i + 1) * DIM + j] + Aroot[i * DIM + (j - 1)] + Aroot[(i + 1) * DIM + (j - 1)]) * (0.25);
                     }
                     else if (i == 0)
                     {
                         // Primer fila sin puntas
                         aux = 0;
-                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
+                        aux += (Aroot[i * DIM + j] + Aroot[i * DIM + (j - 1)] + Aroot[i * DIM + (j + 1)]);
+                        aux += (Aroot[(i + 1) * DIM + j] + Aroot[(i + 1) * DIM + (j - 1)] + Aroot[(i + 1) * DIM + (j + 1)]);
                         B[i * DIM + j] = (aux * 0.166666);
                     }
                     else if (j == 0)
                     {
                         // Primera columna sin puntas
                         aux = 0;
-                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                        aux += (A[i * DIM + (j + 1)] + A[(i - 1) * DIM + (j + 1)] + A[(i + 1) * DIM + (j + 1)]);
+                        aux += (Aroot[i * DIM + j] + Aroot[(i - 1) * DIM + j] + Aroot[(i + 1) * DIM + j]);
+                        aux += (Aroot[i * DIM + (j + 1)] + Aroot[(i - 1) * DIM + (j + 1)] + Aroot[(i + 1) * DIM + (j + 1)]);
                         B[i * DIM + j] = (aux * 0.166666);
                     }
                     else if (j == DIM - 1)
                     {
                         // Ultima columna sin puntas
                         aux = 0;
-                        aux += (A[i * DIM + j] + A[(i - 1) * DIM + j] + A[(i + 1) * DIM + j]);
-                        aux += (A[i * DIM + (j - 1)] + A[(i - 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j - 1)]);
+                        aux += (Aroot[i * DIM + j] + Aroot[(i - 1) * DIM + j] + Aroot[(i + 1) * DIM + j]);
+                        aux += (Aroot[i * DIM + (j - 1)] + Aroot[(i - 1) * DIM + (j - 1)] + Aroot[(i + 1) * DIM + (j - 1)]);
                         B[i * DIM + j] = (aux * 0.166666);
                     }
                     else
                     {
                         // Caso comun
                         aux = 0;
-                        aux += (A[i * DIM + j] + A[i * DIM + (j - 1)] + A[i * DIM + (j + 1)]);
-                        aux += (A[(i - 1) * DIM + j] + A[(i - 1) * DIM + (j - 1)] + A[(i - 1) * DIM + (j + 1)]);
-                        aux += (A[(i + 1) * DIM + j] + A[(i + 1) * DIM + (j - 1)] + A[(i + 1) * DIM + (j + 1)]);
+                        aux += (Aroot[i * DIM + j] + Aroot[i * DIM + (j - 1)] + Aroot[i * DIM + (j + 1)]);
+                        aux += (Aroot[(i - 1) * DIM + j] + Aroot[(i - 1) * DIM + (j - 1)] + Aroot[(i - 1) * DIM + (j + 1)]);
+                        aux += (Aroot[(i + 1) * DIM + j] + Aroot[(i + 1) * DIM + (j - 1)] + Aroot[(i + 1) * DIM + (j + 1)]);
                         B[i * DIM + j] = (aux * 0.111111);
                     }
                 }
             }
-
-            // el Root espera a que todos los procesos terminen. El message tag es 2
+       
             for (int i = 1; i <= slaveTaskCount; i++)
             {
                 /** Envio B[0] para que cada hilo calcule su propia convergencia. */
                 MPI_Send(&B[0], 1, MPI_FLOAT, i, 2, MPI_COMM_WORLD);
+
             }
 
             /** Parte II - Verificacion de Convergencia. */
@@ -191,9 +209,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
-              // Si no converge, el root copia todos los valores de B a A.
+            // Si no converge, el root copia todos los valores de B a A.
             if (!convergencia)
             {
                 // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
@@ -201,7 +218,7 @@ int main(int argc, char *argv[])
                 {
                     for (j = 0; j < DIM; j++)
                     {
-                        A[i * DIM + j] = B[i * DIM + j];
+                        Aroot[i * DIM + j] = B[i * DIM + j];
                     }
                 }
             }
@@ -220,7 +237,8 @@ int main(int argc, char *argv[])
                 offset += slaveSize;
             }
 
-            
+            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+
         } while (!convergencia);
 
         /* Fin de la medicion de tiempo del padre*/
@@ -237,7 +255,8 @@ int main(int argc, char *argv[])
          * La primer fila es A[0] hasta A[DIM - 1]
          * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]
          */
-        A = (float *)malloc(sizeof(float) * (slaveSize + (2 * DIM)));
+        int size = ID == slaveTaskCount ? 1 : 2;
+        A = (float *)malloc(sizeof(float) * (slaveSize + (size * DIM)));
         /* en B[0] comienza lo que calcula cada hilo para B. */
         B = (float *)malloc(sizeof(float) * (slaveSize));
 
@@ -247,6 +266,8 @@ int main(int argc, char *argv[])
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
         timetick = dwalltime();
+        //Dejo libre la fila 0 y la ultia
+        MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
         do
         {
@@ -255,10 +276,16 @@ int main(int argc, char *argv[])
             // El Source sera siempre el root (Master) con ID = 0
             source = 0;
 
-            /** El esclavo espera por el mensaje con tag 1 que envia el root
-             * Recibo entonces el pedazo de A que me corresponde y
-             * la fila superior e inferior al chunk que me corresponde. */
-            MPI_Recv(&A[0], slaveSize + (2 * DIM), MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+            /**
+                Solamente recibo la ultima fila del hilo anterior y la primera del siguente, el resto ya lo tengo
+            **/
+            MPI_Recv(&A[0],  DIM, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+
+            if (ID != slaveTaskCount) {
+                MPI_Recv(&A[DIM + slaveSize],  DIM, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+            }
+           
+
 
             /** Calculo para mis datos, desde i = 1 hasta (slaveSize/DIM) + 1. */
             for (i = 1; i < (slaveSize / DIM) + 1; i++)
@@ -317,7 +344,6 @@ int main(int argc, char *argv[])
                 }
             }
 
-            
 
             /** Recibo B[0] en un auxiliar para calcular mi propia convergencia. */
             MPI_Recv(&b_cero_root, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
@@ -334,10 +360,13 @@ int main(int argc, char *argv[])
                 }
             }
 
-            PI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+            
 
             /** Envio el resultado B con Message Tag = 2. */
             MPI_Send(&B[0], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+
+           //Se usa all reduce para que el resultado quede en todos los threads y no solo en el root
+            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
         
         } while (!convergencia);
 
