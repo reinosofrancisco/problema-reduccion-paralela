@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
 
     init_matrix_ceros_y_unos_filas(A);
 
+    printf("Matriz Original de size %dx%d\n", DIM, DIM);
+
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
 

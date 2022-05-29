@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+
     // Variable auxiliar para calculo del tiempo
     double timetick;
     int i;
@@ -60,6 +61,8 @@ int main(int argc, char *argv[])
     B = (float *)malloc(sizeof(float) * DIM);
 
     init_vector_ceros_y_unos(A);
+
+    printf("Vector Original de size %d\n", DIM);
 
     int convergencia;
 

@@ -1,7 +1,7 @@
 #!/bin/bash  
 # chmod +x script.sh
 
-mpicc -o una ../mpiUnaDimensionReduccion.c 
+gcc -fopenmp -o dos ../ompDosDimensionesReduccion.c 
 
 for i in 1 2 4 
 
@@ -11,17 +11,15 @@ echo -e "----------------------"
 echo "NUM_THREADS = $i"
 echo -e "\n"
 
-mpirun -np $i una 256
+./dos 256 $i
 echo -e "\n"
 
-mpirun -np $i una 512
+./dos 512 $i
 echo -e "\n"
 
-mpirun -np $i una 1024
+./dos 1024 $i
 echo -e "\n"
 
-# mpirun -np $i una 2048
-# echo -e "\n"
 
 done
 
