@@ -15,7 +15,7 @@ float *A, *B;
 /*                       Funciones Auxiliares                              */
 /***************************************************************************/
 
-/** Inicializa el Vector A con valores Aleatorios del 1 al 100
+/** Inicializa el Vector A con valores Aleatorios del 0 al 1
  * @param A Vector a inicializar
  */
 void init_vector_ceros_y_unos(float *A)

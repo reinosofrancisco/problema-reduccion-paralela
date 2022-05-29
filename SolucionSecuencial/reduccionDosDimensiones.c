@@ -16,7 +16,7 @@ float *A, *B;
 /*                       Funciones Auxiliares                              */
 /***************************************************************************/
 
-/** Inicializa la Matriz con valores Aleatorios del 1 al 100
+/** Inicializa la Matriz con valores Aleatorios del 0 al 0
  * guardada por filas. Acceso mediante A[i * DIM + j]
  * @param A Matriz a inicializar
  */
