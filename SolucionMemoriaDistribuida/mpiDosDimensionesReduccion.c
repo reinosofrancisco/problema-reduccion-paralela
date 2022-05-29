@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
             offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
-                // Envio la ultima fila del hilo (i - 1) , al hilo i
+                // Envio la ultima fila del hilo (i - 1) , al hilo (i)
                 MPI_Send(&A[offset - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
                 // El ultimo hijo no necesita la primer fila del hilo (i + 1)
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
                 offset += slaveSize;
             }
 
-            /** El Root calcula el primer chunk de datos */
+            // El Root calcula el primer chunk de datos
             for (i = 0; i < slaveSize / DIM; i++)
             {
                 for (j = 0; j < DIM; j++)
@@ -249,12 +249,10 @@ int main(int argc, char *argv[])
          * Esto es, slaveSize + las puntas.
          * Los datos de los hijos son A[DIM] hasta A[DIM + slaveSize - 1]
          * La primer fila es A[0] hasta A[DIM - 1]
-         * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]
-         */
+         * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]. */
 
         /** Aloco memoria para el chunkSize + 2 filas extra. 
-         * Si soy el ultimo hilo, solo aloco para chunkSize + 1 fila. 
-         * */
+         * Si soy el ultimo hilo, solo aloco para chunkSize + 1 fila. */
         int size = ((ID == slaveTaskCount) ? 1 : 2);
         A = (float *)malloc(sizeof(float) * (slaveSize + (size * DIM)));
 
@@ -268,7 +266,7 @@ int main(int argc, char *argv[])
         double timetick;
         timetick = dwalltime();
         
-        /* Recibo con un Scatter el chunk que debo calcular sin las puntas.*/
+        /* Recibo con un Scatter el chunk que debo calcular sin las filas extra.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
 
