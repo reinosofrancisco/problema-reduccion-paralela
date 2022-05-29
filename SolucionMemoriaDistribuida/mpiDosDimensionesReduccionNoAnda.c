@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
         double timetick;
         timetick = dwalltime();
 
-        //Hago el Scatter de A a todos los procesos. El Root recibe en &A[0]
+        // Hago el Scatter de A a todos los procesos. El Root recibe en &A[0]
         MPI_Scatter(A, slaveSize, MPI_FLOAT, A, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
         /** Mientras B no converga, envio las filas superior e inferior y calculo. */
@@ -113,10 +113,12 @@ int main(int argc, char *argv[])
             /** Parte I - Reduccion. */
 
             /** Message Tag 1 para el envio de las filas extra de la matriz */
+
+            /* Envio mi ultima fila al ID + 1 . */
             MPI_Send(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD);
 
+            /* Recibo la primer fila del ID + 1*/
             MPI_Recv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &status);
-           
 
             // El Root calcula el primer chunk de datos
             for (i = 0; i < slaveSize / DIM; i++)
@@ -172,7 +174,6 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-
             convergenciaLocal = 1;
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < (slaveSize / DIM); i++)
@@ -199,8 +200,6 @@ int main(int argc, char *argv[])
                 }
             }
 
-           
-
         } while (!convergencia);
 
         MPI_Gather(B, slaveSize, MPI_FLOAT, B, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -219,7 +218,7 @@ int main(int argc, char *argv[])
          * La primer fila es A[0] hasta A[DIM - 1]
          * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]. */
 
-        /** Aloco memoria para el chunkSize + 2 filas extra. 
+        /** Aloco memoria para el chunkSize + 2 filas extra.
          * Si soy el ultimo hilo, solo aloco para chunkSize + 1 fila. */
         int size = ((ID == slaveTaskCount) ? 1 : 2);
         A = (float *)malloc(sizeof(float) * (slaveSize + (size * DIM)));
@@ -229,22 +228,26 @@ int main(int argc, char *argv[])
 
         /* Variables auxiliares */
         float b_cero_root;
-        
+
         /* Recibo con un Scatter el chunk que debo calcular sin las filas extra.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
 
         do
         {
             /** Parte I - Reduccion. */
 
-            MPI_Send(&A[1], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD);
-            
-            if (ID != slaveTaskCount) {
+            /* Envio mi primer fila al ID - 1. */
+            MPI_Send(&A[DIM], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD);
+
+            if (ID != slaveTaskCount)
+            {
+                /* Envio mi ultima fila al ID + 1. */
                 MPI_Send(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD);
             }
 
             /** Recibo las filas extra en A[0] y A[DIM + slaveSize]. */
+
+            /* Recibo la primer fila del ID + 1 */
             MPI_Recv(&A[0], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &status);
 
             /** Solo recibo la ultima fila si NO soy el ultimo hilo. */
@@ -339,12 +342,11 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-           
+
         } while (!convergencia);
 
-        //Envio el resultado final al master
+        // Envio el resultado final al master
         MPI_Gather(B, slaveSize, MPI_FLOAT, B, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
     }
 
     free(A);
