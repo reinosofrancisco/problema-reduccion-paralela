@@ -65,6 +65,8 @@ int main(int argc, char *argv[])
 
     int convergencia, i;
     omp_set_num_threads(numThreads);
+    float *temp;
+
 
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
@@ -106,14 +108,16 @@ int main(int argc, char *argv[])
                 convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
             } // Threads Join because of reduction statement.
 
-            if (!convergencia)
+            #pragma omp master
             {
-            //  Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
-                #pragma omp for private(i)
-                for (i = 0; i < DIM; i++)
+                if (!convergencia)
                 {
-                    A[i] = B[i];
-                } // No hay Join implicito.
+                    // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
+                    temp = A;
+                    A = B;
+                    B = temp;
+                
+                }
             }
 
             // Se deben esperar despues del for porque todos necesitan las puntas de A

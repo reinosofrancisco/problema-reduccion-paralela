@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
     int i, j;
     int convergencia;
     register float aux; // Register for multiple accesses to the same variable
+    float *temp;
 
     // Controla los argumentos al programa
     if ((argc != 3) || ((DIM = atoi(argv[1])) <= 0) || ((numThreads = atoi(argv[2])) <= 0))
@@ -172,17 +173,16 @@ int main(int argc, char *argv[])
                 }
             } // Threads Join because of reduction statement.
 
-            if (!convergencia)
+            #pragma omp master
             {
-                // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
-                #pragma omp parallel for private(i, j)
-                for (i = 0; i < DIM; i++)
+                if (!convergencia)
                 {
-                    for (j = 0; j < DIM; j++)
-                    {
-                        A[i * DIM + j] = B[i * DIM + j];
-                    }
-                } // No hay Join implicito.
+                    // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
+                    temp = A;
+                    A = B;
+                    B = temp;
+                
+                }
             }
 
             // Se deben esperar despues del for porque todos necesitan las filas de A

@@ -1,0 +1,53 @@
+----------------------
+NUM_THREADS = 1 (Sequencial)
+
+
+Vector Original de size 512
+Tiempo en segundos para convergencia 0.254837
+
+
+Vector Original de size 1024
+Tiempo en segundos para convergencia 1.112941
+
+
+Vector Original de size 2048
+Tiempo en segundos para convergencia 2.963661
+
+
+[Fin del Script] 
+
+---
+
+----------------------
+NUM_THREADS = 2
+
+
+Vector Original de size 512
+Tiempo en segundos para convergencia 0.017780
+
+
+Vector Original de size 1024
+Tiempo en segundos para convergencia 0.436206
+
+
+Vector Original de size 2048
+Tiempo en segundos para convergencia 2.520688
+
+
+----------------------
+NUM_THREADS = 4
+
+
+Vector Original de size 512
+Tiempo en segundos para convergencia 0.012403
+
+
+Vector Original de size 1024
+Tiempo en segundos para convergencia 0.176225
+
+
+Vector Original de size 2048
+Tiempo en segundos para convergencia 0.432968
+
+
+[Fin del Script] 
