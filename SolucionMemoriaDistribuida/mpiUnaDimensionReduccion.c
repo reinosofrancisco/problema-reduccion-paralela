@@ -139,11 +139,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            for (int i = 1; i <= slaveTaskCount; i++)
-            {
-                /** Envio B[0] para que cada hilo calcule su propia convergencia. */
-                MPI_Send(&B[0], 1, MPI_FLOAT, i, 2, MPI_COMM_WORLD);
-            }
+            /* Broadcast de B[0] para que cada hilo calcule su propia convergencia. */
+            MPI_Bcast(B, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
             /** Parte II - Verificacion de Convergencia. */
 
@@ -243,7 +240,7 @@ int main(int argc, char *argv[])
             }
 
             /** Recibo B[0] en un auxiliar para calcular mi propia convergencia. */
-            MPI_Recv(&b_cero_root, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
+            MPI_Bcast(&b_cero_root, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
             /** Parte II - Verificacion de Convergencia. */
 
