@@ -61,7 +61,6 @@ int main(int argc, char *argv[])
     int i, j;
     int convergencia;
     register float aux; // Register for multiple accesses to the same variable
-    float *temp;
 
     /* Alocacion de memoria para Matriz N*N cuadrada */
     A = (float *)malloc(sizeof(float) * DIM * DIM);
@@ -161,10 +160,14 @@ int main(int argc, char *argv[])
 
         if (!convergencia)
         {
-            // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
-            temp = A;
-            A = B;
-            B = temp;
+            // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
+            for (i = 0; i < DIM; i++)
+            {
+                for (j = 0; j < DIM; j++)
+                {
+                    A[i * DIM + j] = B[i * DIM + j];
+                }
+            }
         }
     } while (!convergencia);
 

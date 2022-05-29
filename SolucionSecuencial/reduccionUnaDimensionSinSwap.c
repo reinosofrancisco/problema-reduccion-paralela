@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+
     // Variable auxiliar para calculo del tiempo
     double timetick;
     int i;
@@ -63,9 +64,7 @@ int main(int argc, char *argv[])
 
     printf("Vector Original de size %d\n", DIM);
 
-    /* Variables auxiliares */
     int convergencia;
-    float *temp;
 
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
@@ -101,10 +100,11 @@ int main(int argc, char *argv[])
 
         if (!convergencia)
         {
-            // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
-            temp = A;
-            A = B;
-            B = temp;
+            // Copio todo el Vector B en A, y vuelvo a utilizar B como auxiliar
+            for (i = 0; i < DIM; i++)
+            {
+                A[i] = B[i];
+            }
         }
 
     } while (!convergencia);
