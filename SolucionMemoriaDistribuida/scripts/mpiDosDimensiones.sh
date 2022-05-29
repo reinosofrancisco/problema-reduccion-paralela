@@ -3,7 +3,7 @@
 
 mpicc -o dos ../mpiDosDimensionesReduccion.c 
 
-for i in 1 2 4 
+for i in 2 4 
 
 do
 
