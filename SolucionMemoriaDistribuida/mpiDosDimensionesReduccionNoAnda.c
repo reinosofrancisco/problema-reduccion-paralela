@@ -92,12 +92,6 @@ int main(int argc, char *argv[])
         /** Alocacion de memoria de la matriz para el padre */
         A = (float *)malloc(sizeof(float) * DIM * DIM);
         B = (float *)malloc(sizeof(float) * DIM * DIM);
-<<<<<<< HEAD
-
-        /** Matriz temporal de ChunkSize + 1 fila extra para el root. */
-        float *Aroot  = (float *)malloc(sizeof(float) * (slaveSize +  DIM));
-=======
->>>>>>> bcabd1e1d52ab6e22eff9f7ba9ac4d52b87f8101
 
         /** Relleno el Vector A con valores entre 0 y 1 */
         for (int i = 0; i < DIM; i++)
