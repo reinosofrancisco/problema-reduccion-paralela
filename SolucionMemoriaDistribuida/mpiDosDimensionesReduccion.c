@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    /** Numero de Proceos Esclavos sin contar el ID 0. */
+    /** Numero de Procesos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
     /** Pedazo del vector que le corresponde a cada hijo. */
     slaveSize = (DIM * DIM) / nProcs;

@@ -80,11 +80,10 @@ int main(int argc, char *argv[])
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
 
-    do
+    #pragma omp parallel 
     {
-        #pragma omp parallel 
+        do
         {
-
             /** Parte I - Calculo de Vector Reducido*/
 
             /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
@@ -155,7 +154,7 @@ int main(int argc, char *argv[])
                         B[i * DIM + j] = (aux * 0.111111);
                     };
                 }
-            }
+            } // No hay Join implicito.
 
             // Se deben esperar despues del for porque todos necesitan el valor de B[0]
             #pragma omp barrier
@@ -171,7 +170,7 @@ int main(int argc, char *argv[])
                 {
                     convergencia = convergencia && (fabs(B[0] - B[i * DIM + j]) < PRESICION);
                 }
-            }
+            } // Threads Join because of reduction statement.
 
             if (!convergencia)
             {
@@ -183,10 +182,15 @@ int main(int argc, char *argv[])
                     {
                         A[i * DIM + j] = B[i * DIM + j];
                     }
-                }
+                } // No hay Join implicito.
             }
-        }
-    } while (!convergencia);
+
+            // Se deben esperar despues del for porque todos necesitan las filas de A
+            #pragma omp barrier 
+            
+        } while (!convergencia);
+
+    } // Fin de la region paralela. Join implicito.
 
     /* Fin de la medicion de tiempo */
     printf("Tiempo en segundos para convergencia %f\n", dwalltime() - timetick);
