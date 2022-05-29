@@ -75,6 +75,11 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    if (nProcs == 1){
+        printf("\n Solo hay un proceso, no se puede ejecutar el programa\n\n");
+        exit(1);
+    }
+
     /** Numero de Proceos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
     /** Pedazo del vector que le corresponde a cada hijo. */
@@ -96,6 +101,9 @@ int main(int argc, char *argv[])
 
         printf("Vector Original de size %d\n", DIM);
 
+        /* Variable Auxiliar */
+        MPI_Request request;
+
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
@@ -106,18 +114,15 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio las puntas de los chunks a los procesos y calculo */
         do
         {
+            /** Parte I - Reduccion. */
 
-            if (nProcs > 1) {
-                MPI_Request request;
-                /** Parte I - Reduccion. */
+            /** Message Tag 1 para el envio de las filas extra de la matriz */
+            MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-                /** Message Tag 1 para el envio de las filas extra de la matriz */
-                MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+            MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-                MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+            MPI_Wait(&request, &status);
 
-                MPI_Wait(&request, &status);
-            }
             
            
             /* El Root calcula el primer chunk de datos */
@@ -186,6 +191,7 @@ int main(int argc, char *argv[])
 
         /* Variables auxiliares */
         float b_cero_root;
+        MPI_Request request;
 
         /* Recibo con un Scatter el chunk que debo calcular sin las puntas.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[1], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -193,8 +199,7 @@ int main(int argc, char *argv[])
         do
         {
             /** Parte I - Reduccion. */
-            MPI_Request request;
-
+            
             MPI_Isend(&A[1], 1, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
             
             if (ID != slaveTaskCount) {
@@ -211,6 +216,7 @@ int main(int argc, char *argv[])
                 MPI_Irecv(&A[slaveSize + 1], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
                 MPI_Wait(&request, &status);
             }
+            
             /** Calculo para mis datos, desde i = 1 hasta SlaveSize inclusive. */
             for (i = 1; i < slaveSize + 1; i++)
             {

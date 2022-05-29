@@ -71,6 +71,11 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    if (nProcs == 1){
+        printf("\n Solo hay un proceso, no se puede ejecutar el programa\n\n");
+        exit(1);
+    }
+
     /** Numero de Procesos Esclavos sin contar el ID 0. */
     int slaveTaskCount = nProcs - 1;
     /** Pedazo del vector que le corresponde a cada hijo. */
@@ -115,17 +120,16 @@ int main(int argc, char *argv[])
         {
             /** Parte I - Reduccion. */
 
-            if (nProcs > 1) {
-                /** Message Tag 1 para el envio de las filas extra de la matriz.
-                * Envio la ultima fila del root al (ID + 1)
-                */
-                MPI_Isend(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-                /* Recibo la primer fila del hilo (ID == 1) en el root (ID == 0)*/
-                MPI_Irecv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
-                MPI_Wait(&request, &status);
-            }
+            /** Message Tag 1 para el envio de las filas extra de la matriz.
+            * Envio la ultima fila del root al (ID + 1)
+            */
+            MPI_Isend(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
+            /* Recibo la primer fila del hilo (ID == 1) en el root (ID == 0)*/
+            MPI_Irecv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+            MPI_Wait(&request, &status);
+        
            
            
 
