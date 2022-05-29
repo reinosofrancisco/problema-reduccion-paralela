@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
             {
                 A[i * DIM + j] = rand() / (float)RAND_MAX;
             }
-
         }
 
         printf("Matriz Original de size %dx%d\n", DIM, DIM);
@@ -108,28 +107,28 @@ int main(int argc, char *argv[])
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
-        
-    
+
+        //Hago el Scatter de A a todos los procesos. El Root recibe en &A[0]
         MPI_Scatter(A, slaveSize, MPI_FLOAT, A, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-
-        /** Mientras B no converga, envio A a los procesos y calculo */
+        /** Mientras B no converga, envio las filas superior e inferior y calculo. */
         do
         {
             /** Parte I - Reduccion. */
 
-            /** Message Tag 1 para el envio del Vector */
+            /** Message Tag 1 para el envio de las filas extra de la matriz */
             offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
-                //Envio la ultima fila del hilo i - 1 , al hilo i
+                // Envio la ultima fila del hilo (i - 1) , al hilo i
                 MPI_Send(&A[offset - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
-                // El ultimo no necesita la ultima fila
-                if (dest != slaveTaskCount) {
+                // El ultimo hijo no necesita la primer fila del hilo (i + 1)
+                if (dest != slaveTaskCount)
+                {
+                    // Envio la primer fila del hilo (i + 1) , al hilo i
                     MPI_Send(&A[offset + slaveSize - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
                 }
-               
 
                 // Modifico el Offset salteando por chunks de datos
                 offset += slaveSize;
@@ -183,15 +182,16 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-       
+
             for (int i = 1; i <= slaveTaskCount; i++)
             {
                 /** Envio B[0] para que cada hilo calcule su propia convergencia. */
                 MPI_Send(&B[0], 1, MPI_FLOAT, i, 2, MPI_COMM_WORLD);
-
             }
 
             /** Parte II - Verificacion de Convergencia. */
+
+
             convergenciaLocal = 1;
             // El Root verifica la convergencia del primer chunk de datos.
             for (i = 0; i < (slaveSize / DIM); i++)
@@ -202,16 +202,13 @@ int main(int argc, char *argv[])
                 }
             }
 
-            printf("Convergencia hilo 0: %d \n", convergenciaLocal);
-
+            /** El Root recibe la convergencia de los demas hilos en &convergencia. */
             MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
-            
-
-            // Si no converge, el root copia todos los valores de B a A.
+            // Si no converge, el root copia su chunk de datos de B a A.
             if (!convergencia)
             {
-                // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
+                // Copio el chunk de datos de B a A
                 for (i = 0; i < (slaveSize / DIM); i++)
                 {
                     for (j = 0; j < DIM; j++)
@@ -221,13 +218,17 @@ int main(int argc, char *argv[])
                 }
             }
 
-
             offset = slaveSize;
             for (int i = 1; i <= slaveTaskCount; i++)
             {
-                if (convergencia) {
+                /* Si converge, guardo el resultado en B. */
+                if (convergencia)
+                {
                     MPI_Recv(&B[offset], slaveSize, MPI_FLOAT, i, 2, MPI_COMM_WORLD, &status);
-                } else {
+                }
+                /* Si no converge, guardo en A para seguir calculando. */
+                else
+                {
                     MPI_Recv(&A[offset], slaveSize, MPI_FLOAT, i, 2, MPI_COMM_WORLD, &status);
                 }
 
@@ -240,7 +241,6 @@ int main(int argc, char *argv[])
         printf("Tiempo en segundos para convergencia %f para el root ID = %d\n", (dwalltime() - timetick), ID);
     }
 
-
     /** COMPORTAMIENTO PROCESOS HIJOS */
     if (ID > 0)
     {
@@ -251,10 +251,13 @@ int main(int argc, char *argv[])
          * La primer fila es A[0] hasta A[DIM - 1]
          * La ultima fila es A[DIM + slaveSize] hata A[DIM + slaveSize + DIM - 1]
          */
-        int size = (ID == slaveTaskCount ? 1 : 2);
 
+        /** Aloco memoria para el chunkSize + 2 filas extra. 
+         * Si soy el ultimo hilo, solo aloco para chunkSize + 1 fila. 
+         * */
+        int size = ((ID == slaveTaskCount) ? 1 : 2);
         A = (float *)malloc(sizeof(float) * (slaveSize + (size * DIM)));
-        
+
         /* en B[0] comienza lo que calcula cada hilo para B. */
         B = (float *)malloc(sizeof(float) * (slaveSize));
 
@@ -264,8 +267,10 @@ int main(int argc, char *argv[])
         /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
         double timetick;
         timetick = dwalltime();
-        //Dejo libre la fila 0 y la ultima
+        
+        /* Recibo con un Scatter el chunk que debo calcular sin las puntas.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
 
         do
         {
@@ -274,16 +279,14 @@ int main(int argc, char *argv[])
             // El Source sera siempre el root (Master) con ID = 0
             source = 0;
 
-            /**
-                Solamente recibo la ultima fila del hilo anterior y la primera del siguente, el resto ya lo tengo
-            **/
-            MPI_Recv(&A[0],  DIM, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
+            /** Recibo las filas extra en A[0] y A[DIM + slaveSize]. */
+            MPI_Recv(&A[0], DIM, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
 
-            if (ID != slaveTaskCount) {
+            /** Solo recibo la ultima fila si NO soy el ultimo hilo. */
+            if (ID != slaveTaskCount)
+            {
                 MPI_Recv(&A[DIM + slaveSize], DIM, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
             }
-            
-
 
             /** Calculo para mis datos, desde i = 1 hasta (slaveSize/DIM) + 1. */
             for (i = 1; i < (slaveSize / DIM) + 1; i++)
@@ -341,7 +344,6 @@ int main(int argc, char *argv[])
                 }
             }
 
-
             /** Recibo B[0] en un auxiliar para calcular mi propia convergencia. */
             MPI_Recv(&b_cero_root, 1, MPI_FLOAT, source, 2, MPI_COMM_WORLD, &status);
 
@@ -356,29 +358,26 @@ int main(int argc, char *argv[])
                     convergenciaLocal = convergenciaLocal && (fabs(b_cero_root - B[i * DIM + j]) < PRESICION);
                 }
             }
-            
-            printf("Convergencia hilo 1: %d \n", convergenciaLocal);
-            
-            //Se usa all reduce para que el resultado quede en todos los threads y no solo en el root
+
+            // Se usa all reduce para que el resultado quede en todos los threads y no solo en el root
             MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
-            // Si no converge, el root copia todos los valores de B a A.
+            // Si no converge, el hijo copia su chunk de datos de B a A.
             if (!convergencia)
             {
-                // Copio toda la matriz B en A, y vuelvo a utilizar B como auxiliar
-                for (i = 0; i < (slaveSize / DIM); i++)
+                // Copio el chunk de datos de B a A.
+                for (i = 1; i < (slaveSize / DIM) + 1; i++)
                 {
                     for (j = 0; j < DIM; j++)
                     {
-                        A[i * DIM + j] = B[i * DIM + j];
+                        A[i * DIM + j] = B[(i - 1) * DIM + j];
                     }
                 }
             }
 
-
             /** Envio el resultado B con Message Tag = 2. */
-            MPI_Send(&B[0], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
-        
+            MPI_Send(B, slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+
         } while (!convergencia);
 
         /* Fin de la medicion de tiempo de los hijos */
