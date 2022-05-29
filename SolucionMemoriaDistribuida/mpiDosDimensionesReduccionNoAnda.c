@@ -104,14 +104,13 @@ int main(int argc, char *argv[])
 
         }
 
-
         printf("Matriz Original de size %dx%d\n", DIM, DIM);
 
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
         
-        //Dejo libre la fila 0
+    
         MPI_Scatter(A, slaveSize, MPI_FLOAT, Aroot, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
 
@@ -122,19 +121,19 @@ int main(int argc, char *argv[])
 
             //Agarro la ultima fila que necesita el master para calcular su parte
             for (j = 0; j < DIM; j++) {
-                Aroot[slaveSize * DIM + j] = Aroot[slaveSize * DIM + j];
+                Aroot[slaveSize + j] = A[slaveSize + j];
             }
 
             /** Message Tag 1 para el envio del Vector */
             offset = slaveSize;
             for (dest = 1; dest <= slaveTaskCount; dest++)
             {
-                /* Envio el Vector A desde OFFSET - DIM para incluir las filas externas. */
+                //Envio la ultima fila del hilo i - 1 , al hilo i
                 MPI_Send(&A[offset - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
 
                 // El ultimo no necesita la ultima fila
                 if (dest != slaveTaskCount) {
-                     MPI_Send(&A[offset + slaveSize - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
+                    MPI_Send(&A[offset + slaveSize - DIM], DIM, MPI_FLOAT, dest, 1, MPI_COMM_WORLD);
                 }
                
 
@@ -143,7 +142,7 @@ int main(int argc, char *argv[])
             }
 
             /** El Root calcula el primer chunk de datos */
-            for (i = 0; i < slaveSize / DIM; i++)
+            for (i = 0; i < (slaveSize / DIM); i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
@@ -209,6 +208,7 @@ int main(int argc, char *argv[])
                 }
             }
 
+            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
             // Si no converge, el root copia todos los valores de B a A.
             if (!convergencia)
@@ -237,13 +237,12 @@ int main(int argc, char *argv[])
                 offset += slaveSize;
             }
 
-            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-
         } while (!convergencia);
 
         /* Fin de la medicion de tiempo del padre*/
         printf("Tiempo en segundos para convergencia %f para el root ID = %d\n", (dwalltime() - timetick), ID);
     }
+
 
     /** COMPORTAMIENTO PROCESOS HIJOS */
     if (ID > 0)
@@ -284,11 +283,11 @@ int main(int argc, char *argv[])
             if (ID != slaveTaskCount) {
                 MPI_Recv(&A[DIM + slaveSize],  DIM, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
             }
-           
+            
 
 
             /** Calculo para mis datos, desde i = 1 hasta (slaveSize/DIM) + 1. */
-            for (i = 1; i < (slaveSize / DIM) + 1; i++)
+            for (i = 1; i < (slaveSize / DIM); i++)
             {
                 for (j = 0; j < DIM; j++)
                 {
@@ -361,12 +360,12 @@ int main(int argc, char *argv[])
             }
 
             
+            //Se usa all reduce para que el resultado quede en todos los threads y no solo en el root
+            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+
 
             /** Envio el resultado B con Message Tag = 2. */
             MPI_Send(&B[0], slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
-
-           //Se usa all reduce para que el resultado quede en todos los threads y no solo en el root
-            MPI_Allreduce(&convergenciaLocal, &convergencia, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
         
         } while (!convergencia);
 
