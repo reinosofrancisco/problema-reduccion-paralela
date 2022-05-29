@@ -13,7 +13,6 @@
  * *************************************************************************** */
 
 MPI_Status status;
-
 int ID;     // ID de la Maquina Actual, autoasignada por MPI_Comm_rank
 int nProcs; // Número de Maquinas Totales, autoasignada por MPI_Comm_size
 
@@ -21,6 +20,7 @@ int DIM = 64; // Tamaño de la matriz por defecto
 
 float *A; // matriz A la cual sera enviada a los procesos
 float *B; // matriz B Resultado.
+
 
 int slaveSize;
 
@@ -110,12 +110,15 @@ int main(int argc, char *argv[])
         /** Mientras B no converga, envio las filas superior e inferior y calculo. */
         do
         {
+            MPI_Request request;
             /** Parte I - Reduccion. */
 
             /** Message Tag 1 para el envio de las filas extra de la matriz */
-            MPI_Send(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD);
+            MPI_Isend(&A[slaveSize - DIM], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
-            MPI_Recv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &status);
+            MPI_Irecv(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+
+            MPI_Wait(&request, &status);
            
 
             // El Root calcula el primer chunk de datos
@@ -238,19 +241,23 @@ int main(int argc, char *argv[])
         {
             /** Parte I - Reduccion. */
 
-            MPI_Send(&A[1], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD);
+            MPI_Request request;
+
+            MPI_Isend(&A[DIM], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
             
             if (ID != slaveTaskCount) {
-                MPI_Send(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD);
+                MPI_Isend(&A[slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
             }
 
             /** Recibo las filas extra en A[0] y A[DIM + slaveSize]. */
-            MPI_Recv(&A[0], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &status);
+            MPI_Irecv(&A[0], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
+            MPI_Wait(&request, &status);
 
             /** Solo recibo la ultima fila si NO soy el ultimo hilo. */
             if (ID != slaveTaskCount)
             {
-                MPI_Recv(&A[DIM + slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &status);
+                MPI_Irecv(&A[DIM + slaveSize], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
+                MPI_Wait(&request, &status);
             }
 
             /** Calculo para mis datos, desde i = 1 hasta (slaveSize/DIM) + 1. */
