@@ -157,9 +157,21 @@ int main(int argc, char *argv[])
                 }
             }
 
-        } while (!convergencia);
+            for (i = 1; i <= slaveTaskCount; i++)
+            {
+                if (convergencia)
+                {
+                    /* Si converge, recibo en B el resultado final. */
+                    MPI_Recv(&B[i * slaveSize], slaveSize, MPI_FLOAT, i, 2, MPI_COMM_WORLD, &status);
+                }
+                else
+                {
+                    /* Si no converge, recibo en A para seguir calculando. */
+                    MPI_Recv(&A[i * slaveSize], slaveSize, MPI_FLOAT, i, 2, MPI_COMM_WORLD, &status);
+                }
+            }
 
-        MPI_Gather(B, slaveSize, MPI_FLOAT, B, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        } while (!convergencia);
 
         /* Fin de la medicion de tiempo */
         printf("Tiempo en segundos para convergencia %f manejado por el hijo ID = %d\n", (dwalltime() - timetick), ID);
@@ -191,24 +203,19 @@ int main(int argc, char *argv[])
         do
         {
             /** Parte I - Reduccion. */
-            MPI_Request request;
 
-            MPI_Isend(&A[1], 1, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
-            
-            if (ID != slaveTaskCount) {
-                MPI_Isend(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
-            }
+            // El Source sera siempre el root (Master) con ID = 0
+            source = 0;
+            /** El esclavo espera por el mensaje con tag 1 que envia el root
+             * Recibo entonces la primer punta. */
+            MPI_Recv(&A[0], 1, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
 
-            /** Recibo las filas extra en A[0] y A[DIM + slaveSize]. */
-            MPI_Irecv(&A[0], DIM, MPI_FLOAT, ID - 1, 1, MPI_COMM_WORLD, &request);
-            MPI_Wait(&request, &status);
-
-            /** Solo recibo la ultima fila si NO soy el ultimo hilo. */
+            /* Solo recibo la ultima punta si NO soy el ultimo hilo*/
             if (ID != slaveTaskCount)
             {
-                MPI_Irecv(&A[slaveSize + 1], DIM, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
-                MPI_Wait(&request, &status);
+                MPI_Recv(&A[slaveSize + 1], 1, MPI_FLOAT, source, 1, MPI_COMM_WORLD, &status);
             }
+
             /** Calculo para mis datos, desde i = 1 hasta SlaveSize inclusive. */
             for (i = 1; i < slaveSize + 1; i++)
             {
@@ -249,9 +256,11 @@ int main(int argc, char *argv[])
                 }
             }
 
+            /** Envio el resultado B con Message Tag = 2. */
+            MPI_Send(B, slaveSize, MPI_FLOAT, source, 2, MPI_COMM_WORLD);
+
         } while (!convergencia);
 
-        MPI_Gather(B, slaveSize, MPI_FLOAT, B, slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
         
     }
 
