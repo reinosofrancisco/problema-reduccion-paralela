@@ -261,10 +261,6 @@ int main(int argc, char *argv[])
 
         /* Variables auxiliares */
         float b_cero_root;
-
-        /* Inicio de la medicion de tiempo para el HIJO ID > 0 */
-        double timetick;
-        timetick = dwalltime();
         
         /* Recibo con un Scatter el chunk que debo calcular sin las filas extra.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -378,8 +374,6 @@ int main(int argc, char *argv[])
 
         } while (!convergencia);
 
-        /* Fin de la medicion de tiempo de los hijos */
-        printf("Tiempo en segundos para convergencia %f para el hijo ID = %d\n", (dwalltime() - timetick), ID);
     }
 
     free(A);
