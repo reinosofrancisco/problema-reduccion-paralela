@@ -100,8 +100,10 @@ int main(int argc, char *argv[])
             #pragma omp barrier
 
             /** Parte II - Verificacion de Convergencia. */
-
-            convergencia = 1;
+            #pragma omp single 
+            {
+                convergencia = 1;
+            }
 
             #pragma omp for private(i) reduction(&& : convergencia)
             for (i = 0; i < DIM; i++)
