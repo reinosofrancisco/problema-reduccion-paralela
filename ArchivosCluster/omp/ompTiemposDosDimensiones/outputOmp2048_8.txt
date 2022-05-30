@@ -1,0 +1,2 @@
+Matriz Original de size 2048x2048
+Tiempo en segundos para convergencia 125.125855

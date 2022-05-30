@@ -4,4 +4,4 @@
 #SBATCH -o directorioSalida/outputOmp512_4.txt
 #SBATCH -e directorioSalida/erroresOmp512_4.txt
 export OMP_NUM_THREADS=4
-./eje 512
+./eje 512 4

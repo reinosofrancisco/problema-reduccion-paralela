@@ -157,12 +157,17 @@ int main(int argc, char *argv[])
                 }
             } // No hay Join implicito.
 
-            // Se deben esperar despues del for porque todos necesitan el valor de B[0]
-            #pragma omp barrier
 
             /** Parte II - Verificacion de Convergencia. */
 
-            convergencia = 1;
+            /** Parte II - Verificacion de Convergencia. */
+            #pragma omp single 
+            {
+                convergencia = 1;
+            }
+
+            // Se deben esperar despues del for porque todos necesitan el valor de B[0] y de convergencia
+            #pragma omp barrier
 
             #pragma omp for private(i, j) reduction(&& : convergencia) 
             for (i = 0; i < DIM; i++)

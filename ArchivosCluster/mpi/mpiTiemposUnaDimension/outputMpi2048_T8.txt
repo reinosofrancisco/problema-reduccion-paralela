@@ -1,0 +1,2 @@
+Vector Original de size 2048
+Tiempo en segundos para convergencia 95.527030 para el root ID = 0

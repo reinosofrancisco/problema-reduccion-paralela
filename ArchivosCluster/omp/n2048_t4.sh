@@ -4,5 +4,5 @@
 #SBATCH -o directorioSalida/outputOmp2048_4.txt
 #SBATCH -e directorioSalida/erroresOmp2048_4.txt
 export OMP_NUM_THREADS=4
-./eje 2048
+./eje 2048 4
 

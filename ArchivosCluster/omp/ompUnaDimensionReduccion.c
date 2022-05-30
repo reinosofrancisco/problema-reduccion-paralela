@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 {
     // Variable auxiliar para calculo del tiempo
     double timetick;
-    int numThreads = 4;
+    int numThreads;
 
     // Controla los argumentos al programa
     if ((argc != 3) || ((DIM = atoi(argv[1])) <= 0) || ((numThreads = atoi(argv[2])) <= 0))
@@ -94,19 +94,25 @@ int main(int argc, char *argv[])
                     B[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
                 }
             } // No hay Join implicito.
+            
 
-            // Se deben esperar despues del for porque todos necesitan el valor de B[0]
-            #pragma omp barrier
+            
 
             /** Parte II - Verificacion de Convergencia. */
+            #pragma omp single 
+            {
+                convergencia = 1;
+            }
 
-            convergencia = 1;
+            // Se deben esperar despues del for porque todos necesitan el valor de B[0] y de convergencia
+            #pragma omp barrier
 
             #pragma omp for private(i) reduction(&& : convergencia)
             for (i = 0; i < DIM; i++)
             {
                 convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
             } // Threads Join because of reduction statement.
+
 
             #pragma omp master
             {
@@ -115,8 +121,7 @@ int main(int argc, char *argv[])
                     // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
                     temp = A;
                     A = B;
-                    B = temp;
-                
+                    B = temp; 
                 }
             }
 

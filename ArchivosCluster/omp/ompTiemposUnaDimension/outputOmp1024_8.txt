@@ -1,0 +1,2 @@
+Vector Original de size 1024
+Tiempo en segundos para convergencia 3.740280
