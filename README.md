@@ -54,13 +54,15 @@ valores convergen.
 
 ## Tiempos de Ejecucion
 
-![picture 2](Problematica%20y%20Datos%20Auxiliares/images/e118345e0406d04c1a384daacc6e79fc604b8f245f00cad1bfbffce8330e2f52.png) 
+![picture 1](Problematica%20y%20Datos%20Auxiliares/images/86a182938a4755264fb91ffb125e997998973cf7b1e98c8abda3c6aaa0220870.png)  
 
 
 ## Speedup
 
-![picture 4](Problematica%20y%20Datos%20Auxiliares/images/40f578e7c065acad6734a7ee199996053c362a1af3773cf63df7388eb9ce03a2.png)  
+ ![picture 2](Problematica%20y%20Datos%20Auxiliares/images/3d7b7fbacc9b23fd7881a6c6f41b280a55bebe463a9bdab949e849b3f19c6eca.png)  
+
 
 ## Eficiencia
 
-![picture 5](Problematica%20y%20Datos%20Auxiliares/images/b85a3a4de281558de830f82a848b397a0385a1e0cccfa6c4b85d81d486c60afd.png)  
+![picture 3](Problematica%20y%20Datos%20Auxiliares/images/9d9aa47aa7d6db8448b9ab76a11db439380b4677f3fbf55ef9d683087787d850.png)  
+
