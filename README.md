@@ -48,4 +48,19 @@ Para el caso de dos dimensiones se toma el primer elemento V[0,0].
 Si los valores convergen el algoritmo finaliza. **Si los valores no convergen debe aplicarse la reducción nuevamente.** Esto puede implicar varias ejecuciones de la reducción hasta que los
 valores convergen.
 
+---
 
+# Resultados obtenidos en el Cluster
+
+## Tiempos de Ejecucion
+
+![picture 2](Problematica%20y%20Datos%20Auxiliares/images/e118345e0406d04c1a384daacc6e79fc604b8f245f00cad1bfbffce8330e2f52.png) 
+
+
+## Speedup
+
+![picture 4](Problematica%20y%20Datos%20Auxiliares/images/40f578e7c065acad6734a7ee199996053c362a1af3773cf63df7388eb9ce03a2.png)  
+
+## Eficiencia
+
+![picture 5](Problematica%20y%20Datos%20Auxiliares/images/b85a3a4de281558de830f82a848b397a0385a1e0cccfa6c4b85d81d486c60afd.png)  
