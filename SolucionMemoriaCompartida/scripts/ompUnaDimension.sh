@@ -1,9 +1,9 @@
 #!/bin/bash  
 # chmod +x script.sh
 
-gcc -fopenmp -o una ../ompUnaDimensionReduccion.c 
+gcc -fopenmp -o una ../ompUnaDimensionReduccionV2.c 
 
-for i in 1 2 4 
+for i in 4 
 
 do
 

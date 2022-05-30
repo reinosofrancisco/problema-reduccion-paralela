@@ -68,65 +68,55 @@ int main(int argc, char *argv[])
     float *temp;
 
 
+
     /* Inicio de la medicion de tiempo */
     timetick = dwalltime();
 
 
-    #pragma omp parallel
+    do
     {
-        do
+        
+
+        /** Parte I - Calculo de Vector Reducido */
+
+        #pragma omp parallel for private(i)
+        for (i = 0; i < DIM; i++)
         {
-            /** Parte I - Calculo de Vector Reducido */
-
-            #pragma omp for private(i)
-            for (i = 0; i < DIM; i++)
+            if (i == 0)
             {
-                if (i == 0)
-                {
-                    B[i] = (A[i] + A[i + 1]) * 0.5;
-                }
-                else if (i == DIM - 1)
-                {
-                    B[i] = (A[i - 1] + A[i]) * 0.5;
-                }
-                else
-                {
-                    B[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
-                }
-            } // No hay Join implicito.
-            
-
-            // Se deben esperar despues del for porque todos necesitan el valor de B[0]
-            #pragma omp barrier
-
-            /** Parte II - Verificacion de Convergencia. */
-
-            convergencia = 1;
-
-            #pragma omp for private(i) reduction(&& : convergencia)
-            for (i = 0; i < DIM; i++)
-            {
-                convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
-            } // Threads Join because of reduction statement.
-
-
-            #pragma omp master
-            {
-                if (!convergencia)
-                {
-                    // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
-                    temp = A;
-                    A = B;
-                    B = temp; 
-                }
+                B[i] = (A[i] + A[i + 1]) * 0.5;
             }
+            else if (i == DIM - 1)
+            {
+                B[i] = (A[i - 1] + A[i]) * 0.5;
+            }
+            else
+            {
+                B[i] = (A[i - 1] + A[i] + A[i + 1]) * 0.333333;
+            }
+        }
 
-            // Se deben esperar despues del for porque todos necesitan las puntas de A
-            #pragma omp barrier 
+        /** Parte II - Verificacion de Convergencia. */
 
-        } while (!convergencia);
+        convergencia = 1;
 
-    } // Fin de la region paralela. Join implicito.
+        #pragma omp parallel for private(i) reduction(&& : convergencia)
+        for (i = 0; i < DIM; i++)
+        {
+            convergencia = convergencia && (fabs(B[0] - B[i]) < PRESICION);
+        }
+
+
+        if (!convergencia)
+        {
+            // Hago un swap de los vectores y vuelvo a usar B como auxiliar. 
+            temp = A;
+            A = B;
+            B = temp; 
+        }
+
+
+    } while (!convergencia);
 
     /* Fin de la medicion de tiempo */
     printf("Tiempo en segundos para convergencia %f\n", dwalltime() - timetick);
