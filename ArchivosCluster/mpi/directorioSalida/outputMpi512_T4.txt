@@ -1,0 +1,2 @@
+Matriz Original de size 512x512
+Tiempo en segundos para convergencia 5.707454 para el root ID = 0
