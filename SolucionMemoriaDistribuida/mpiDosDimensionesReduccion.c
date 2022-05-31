@@ -108,6 +108,9 @@ int main(int argc, char *argv[])
         /* Variables auxiliares */
         MPI_Request request;
 
+        /* Espero a que todos los procesos aloquen memoria antes de medir el tiempo*/
+        MPI_Barrier(MPI_COMM_WORLD);
+
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
@@ -243,6 +246,9 @@ int main(int argc, char *argv[])
         /* Variables auxiliares */
         float b_cero_root;
         MPI_Request request;
+
+        /* Espero a que todos los procesos aloquen memoria antes de medir el tiempo*/
+        MPI_Barrier(MPI_COMM_WORLD);
 
         /* Recibo con un Scatter el chunk que debo calcular sin las filas extra.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[DIM], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
