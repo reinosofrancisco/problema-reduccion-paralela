@@ -104,9 +104,6 @@ int main(int argc, char *argv[])
         /* Variable Auxiliar */
         MPI_Request request;
 
-        /* Espero a que todos los procesos aloquen memoria antes de medir el tiempo*/
-        //MPI_Barrier(MPI_COMM_WORLD);
-
         /* Inicio de la medicion de tiempo */
         double timetick;
         timetick = dwalltime();
@@ -119,7 +116,7 @@ int main(int argc, char *argv[])
         {
             /** Parte I - Reduccion. */
 
-            /** Message Tag 1 para el envio de las filas extra de la matriz */
+            /** Message Tag 1 para el envio de las filas extra del vector */
             MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
             MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
@@ -195,9 +192,6 @@ int main(int argc, char *argv[])
         /* Variables auxiliares */
         float b_cero_root;
         MPI_Request request;
-
-        /* Espero a que todos los procesos aloquen memoria antes de medir el tiempo*/
-        //MPI_Barrier(MPI_COMM_WORLD);
 
         /* Recibo con un Scatter el chunk que debo calcular sin las puntas.*/
         MPI_Scatter(NULL, 0, MPI_FLOAT, &A[1], slaveSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
