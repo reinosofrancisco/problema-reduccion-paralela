@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
         {
             /** Parte I - Reduccion. */
 
-            /** Message Tag 1 para el envio de las filas extra de la matriz */
+            /** Message Tag 1 para el envio de las filas extra del vector */
             MPI_Isend(&A[slaveSize - 1], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);
 
             MPI_Irecv(&A[slaveSize], 1, MPI_FLOAT, ID + 1, 1, MPI_COMM_WORLD, &request);

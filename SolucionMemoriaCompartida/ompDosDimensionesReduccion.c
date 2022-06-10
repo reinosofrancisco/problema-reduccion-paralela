@@ -85,9 +85,8 @@ int main(int argc, char *argv[])
     {
         do
         {
-            /** Parte I - Calculo de Vector Reducido*/
+            /** Parte I - Calculo de la matriz Reducida*/
 
-            /* Primero calculo para los casos comunes, i = 1 a i = DIM - 2 | j = 1 a j = DIM - 2 */
             #pragma omp for private(i, j, aux)
             for (i = 0; i < DIM; i++)
             {
@@ -159,7 +158,6 @@ int main(int argc, char *argv[])
 
 
             /** Parte II - Verificacion de Convergencia. */
-
             #pragma omp single 
             {
                 convergencia = 1;

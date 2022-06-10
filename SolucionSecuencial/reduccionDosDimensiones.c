@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     do
     {
 
-        /** Parte I - Calculo de Vector Reducido*/
+        /** Parte I - Calculo de la matriz Reducida*/
 
         for (i = 0; i < DIM; i++)
         {
