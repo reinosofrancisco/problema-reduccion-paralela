@@ -160,14 +160,12 @@ int main(int argc, char *argv[])
 
             /** Parte II - Verificacion de Convergencia. */
 
-            /** Parte II - Verificacion de Convergencia. */
             #pragma omp single 
             {
                 convergencia = 1;
-            }
+            } // Barrera implicita
 
-            // Se deben esperar despues del for porque todos necesitan el valor de B[0] y de convergencia
-            #pragma omp barrier
+            /* Aprovechamos la barrera implicita para esperar el valor de B[0]. */
 
             #pragma omp for private(i, j) reduction(&& : convergencia) 
             for (i = 0; i < DIM; i++)
@@ -178,7 +176,7 @@ int main(int argc, char *argv[])
                 }
             } // Threads Join because of reduction statement.
 
-            #pragma omp master
+            #pragma omp single
             {
                 if (!convergencia)
                 {
@@ -188,10 +186,9 @@ int main(int argc, char *argv[])
                     B = temp;
                 
                 }
-            }
+            } // Barrera implicita
 
-            // Se deben esperar despues del for porque todos necesitan las filas de A
-            #pragma omp barrier 
+            /* Aprovechamos la barrera implicita para esperar el valor de Convergencia. */
             
         } while (!convergencia);
 
