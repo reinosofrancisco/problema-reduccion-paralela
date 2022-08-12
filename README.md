@@ -1,9 +1,17 @@
-# Problema de Reducción 
+<div align="center">
+  <h2><strong>Problema de Reducción Paralela</strong></h2>
+
+  <a href="https://ctftime.org/team/196086"><img src="https://img.shields.io/badge/MPI%20%26%20OPEN--MP-V1.0-blue?style=plastic&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAACdlBMVEX59PSeODuvW16wXF+eNzurUVSqUFOeNzqwXV+wXF6dNjmdNTidNTmwW1728fG1ZGayXmC+eXzKk5XKkpTIj5HFh4m9eHqzY2W0ZmivWl28dXjRq6zKk5W8dnixX2HCgYO+e32vXF6xYGK+d3m6cnS4bnCxXmDTrq/Ml5iyYmS/eny9d3nFj5HIjpDTpqfUp6jJk5XLlpe8d3m9eHqyX2HLpqfMp6i4Zmm6dHa7dHe2ZWexXF++fX++foDLpaaxXF63ZWi8eHrDjY/Im53Im5y7dniyXmHJvr7RysrTpafIjpDRoqPOm53TwMDDv7+3j5CjU1afOz6dNTmpT1K6cXPIjo/OmpzOu7u5rq6hUlWOFRmKDRGVJSi6cnTDhYerU1WlRknEhojLlJXGwsKjVVeJDBDSo6T06ur06em3a26oTE/Qn6HSxsewiYqJDRGRHCDKk5T38PDw4uLy5ebIjY+MERWNFBi9eHrWq63NysqnWVyJCw+JCxC8dnjs2drx4+P37+/as7SYLC+nSk3VqKr07u+kRUiICw+1Z2nx5OTq1NXQoKGcNDehPUH69PWICg6MEhbLlZbu3t7t29zbtbbct7ijQ0aHCQ2iP0P48fLt6uq0Zmjr1tfgwcLkycrx5OXmzM2gOz6HBwuxX2H18fLXzM3Op6jlysvdurvUp6iNExbKn6Haz9Db2NiyZGabMTXCgoTIj5GmR0qOFhqLDxOwXmDg29zSv8Da0NCyY2WVIyeVJSmNExeHCAyICQ2MExexYGLh1dbZx8fTwMHc2NnOpqixYWSjQUSxYGPPpabayMnd09Pc2drg2drc1tfc2dng1db///9DmxmyAAAAR3RSTlMAAAAAAAAAAAAAAAAAAAAER6bj+vrjpkcEFpHu7pEWr7AWBJGRBUfu7kimp+Pj+/vj46enSO7vBZKSBRewse8XBajk+/uoSR9YVxAAAAABYktHRNF50f8KAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH5ggMEC0mmG7aJAAAARtJREFUGNMBEAHv/gAAAQIPEBESExQVFhcYAwQAAAEFGRobR0hJSktMHB0eBgcAAhkfTU5PUFFSU1RVViAhCAAiI1dYWVpbXF1eX2BhYiQlACYnY2RbZV1mZ2hpZWprKCkAKmxtWm5vcHFyc3R1dnd4KwAseXp7fH1+f4CBgmV7g4QtAC6FhoduiIl+iouMW3uNZy8AL45gj5CRkpOUlYGWl5iZLwAwmpuPZX2cnZ6foKGio6QxADKlplqPfaeonamDkKqrrDMANDWtro+vsLGys7SPtbY2NAA3OLe4ubq7vL2+v8DBwjk6AAk7PMPExcbHx8jJtso9OwkACgU7OD7LzM3Oz9A2OD8FCwAADA1ANEFCQ0RCRUY6DQsO2AdkEf2XVzoAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjItMDgtMTJUMTY6NDU6MzYrMDA6MDCtLuhjAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIyLTA4LTEyVDE2OjQ1OjM2KzAwOjAw3HNQ3wAAAABJRU5ErkJggg=="/></a>   
+
+
+
 
 Se aplica la función promedio hasta alcanzar un valor aproximado de convergencia. <br>
 Se resolvera en una y dos dimensiones utilizando el modelo de Memoria Compartida (OpenMP) y el modelo de Memoria Distribuida (MPI).
 
 ---
+
+<br>
 
 ## Caso 1: Una dimension
 
@@ -66,3 +74,5 @@ valores convergen.
 
 ![picture 3](Problematica%20y%20Datos%20Auxiliares/images/9d9aa47aa7d6db8448b9ab76a11db439380b4677f3fbf55ef9d683087787d850.png)  
 
+
+</div>
